@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: next-chapter
+    runtime: docker
+    plan: starter
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 8000
+      - key: CAREER_DB
+        value: /data/career.sqlite3
+      - key: CAREER_USER
+        value: owner
+      - key: CAREER_PASSWORD
+        sync: false
+    disk:
+      name: career-data
+      mountPath: /data
+      sizeGB: 1

@@ -1,0 +1,14 @@
+NEXT CHAPTER — RUN ON YOUR COMPUTER
+
+1. Install Python 3.10 or newer from https://www.python.org/downloads/ if needed.
+   On Windows, enable the option to add Python to PATH.
+2. Extract the ZIP to a folder. Do not run inside the ZIP.
+3. Windows: double-click Start Windows.bat.
+   Mac/Linux: open Terminal in this folder and run: python3 server.py
+4. Keep the server window open. In your browser enter: http://localhost:8000
+5. To stop the app, press Ctrl+C in the server window.
+
+Your records are saved in .data/career.sqlite3 beside server.py.
+Keep this folder to keep your records. Export workspace creates a backup.
+This package contains starter data only, no private cloud database.
+No AI service or automated job sourcing is connected yet.
