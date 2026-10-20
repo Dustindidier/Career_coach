@@ -1,5 +1,6 @@
 """Evidence-based tailoring and free search plans. No invented candidate claims."""
 from urllib.parse import urlencode
+from intelligence import source_digest
 
 DEFAULT_ROLES = ['Clinical Safety Nurse', 'Utilization Review Nurse', 'Clinical Documentation Specialist',
                  'Quality Improvement Nurse', 'Clinical Research Nurse', 'Clinical Informatics Nurse']
@@ -65,13 +66,15 @@ def tailor(workspace, job_id):
                 source = {'id': key, 'label': fact['text'], 'text': fact['text'], 'source': fact.get('source') or 'Your confirmed account', 'type': 'fact'}
         elif key.startswith('story:'):
             story = stories.get(key[6:])
-            if story:
+            if story and story.get('confirmed') is True:
                 source = {'id': key, 'label': story['title'], 'text': 'Actions: ' + story['action'] + '\nOutcome: ' + story['outcome'], 'source': 'Your saved story — review before use', 'type': 'story'}
         row = {'requirement': requirement['text'], 'note': requirement.get('note', '')}
         if source:
             evidence[key] = source
             supported.append({**row, 'evidence': source})
         else:
+            if key.startswith('story:') and key[6:] in stories and not stories[key[6:]].get('confirmed'):
+                row['note'] = 'Linked story needs factual review and confirmation in the story bank. ' + row['note']
             gaps.append(row)
     relevant = list(evidence.values())
     name = profile['name']
@@ -84,7 +87,7 @@ def tailor(workspace, job_id):
     intro = f'Dear Hiring Team,\n\nI am interested in the {job["title"]} opportunity at {job["company"]}. [Add your specific, researched reason for applying.]'
     proof = '\n\nRelevant experience I would welcome discussing:\n' + '\n'.join('- ' + e['text'] for e in relevant) if relevant else '\n\n[Add a confirmed example that addresses a reviewed requirement.]'
     closing = '\n\n[Explain how this evidence connects to the role, and acknowledge any training needs.]\n\nThank you for your consideration.\n\n' + name
-    return {'jobId': job_id, 'title': job['title'], 'company': job['company'], 'supported': supported, 'gaps': gaps,
+    return {'sourceDigest': source_digest(workspace, job), 'jobId': job_id, 'title': job['title'], 'company': job['company'], 'supported': supported, 'gaps': gaps,
         'evidence': relevant, 'resume': '\n'.join(resume), 'coverLetter': intro + proof + closing,
         'questions': ['Could you clarify: ' + r['requirement'] for r in gaps[:5]],
         'label': 'Free evidence-based drafts · review all placeholders and claims',

@@ -10,7 +10,8 @@ import secrets
 import urllib.parse
 from http.cookies import SimpleCookie
 from domain import validate_workspace, analyze_posting, guided_coach
-from sources import fetch_jobs
+from sources import fetch_source
+from intelligence import duplicate_check, audit_materials, rank_stories
 from career import search_plan, tailor
 from gmail import Gmail, start_oauth, verify_oauth, alert_links, context_hints
 from pathlib import Path
@@ -255,7 +256,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if not self.same_origin():
             return self.send_error(403)
-        if self.path not in ('/api/analyze', '/api/coach', '/api/source-preview', '/api/tailor', '/api/gmail/connect', '/api/gmail/preview', '/api/gmail/draft', '/api/gmail/disconnect'):
+        if self.path not in ('/api/analyze', '/api/coach', '/api/source-preview', '/api/tailor', '/api/gmail/connect', '/api/gmail/preview', '/api/gmail/draft', '/api/gmail/disconnect', '/api/duplicate-check', '/api/material-audit'):
             return self.send_error(404)
         try:
             data = self.read_json()
@@ -263,6 +264,21 @@ class Handler(SimpleHTTPRequestHandler):
                 raise ValueError()
             if self.path.startswith('/api/gmail/'):
                 return self.gmail_action(data)
+            if self.path in ('/api/duplicate-check', '/api/material-audit'):
+                try:
+                    workspace, _ = read_snapshot()
+                except Exception:
+                    return self.send_error(503, 'Workspace unavailable')
+                if self.path == '/api/duplicate-check':
+                    if not all(isinstance(data.get(k, ''), str) for k in ('sourceUrl', 'company', 'title', 'posting')):
+                        raise ValueError()
+                    return self.json_response(200, duplicate_check(data, workspace['jobs'] + workspace['profile'].get('inbox', [])))
+                if not all(isinstance(data.get(k, ''), str) for k in ('jobId', 'resume', 'coverLetter', 'sourceDigest')):
+                    raise ValueError()
+                job = next((j for j in workspace['jobs'] if j['id'] == data.get('jobId')), None)
+                if job is None:
+                    raise ValueError()
+                return self.json_response(200, audit_materials(workspace, job, data.get('resume', '') + '\n' + data.get('coverLetter', ''), data.get('sourceDigest', '')))
             if self.path == '/api/tailor':
                 if not isinstance(data.get('jobId'), str):
                     raise ValueError()
@@ -275,16 +291,24 @@ class Handler(SimpleHTTPRequestHandler):
                 if not all(isinstance(data.get(k, ''), str) for k in ('provider', 'board', 'query')):
                     raise ValueError()
                 try:
-                    return self.json_response(200, {'jobs': fetch_jobs(data.get('provider', ''), data.get('board', ''), data.get('query', ''))})
-                except ValueError:
-                    return self.send_error(400, 'Invalid feed or oversized response')
+                    result = fetch_source(data.get('provider', ''), data.get('board', ''), data.get('query', ''))
+                    workspace, _ = read_snapshot()
+                    existing = workspace['jobs'] + workspace['profile'].get('inbox', [])
+                    for listing in result['jobs']:
+                        listing['duplicate'] = duplicate_check(listing, existing)
+                        existing.append(listing)
+                    return self.json_response(200, result)
+                except ValueError as error:
+                    return self.json_response(400, {'error': str(error)})
                 except Exception:
-                    return self.send_error(502, 'Employer feed unavailable. Check the provider and board slug.')
+                    return self.json_response(502, {'error': 'Source unavailable or access denied. Coverage is unknown; existing jobs were not changed.'})
             if self.path == '/api/analyze':
                 if not isinstance(data.get('posting'), str) or len(data['posting']) > 100000:
                     raise ValueError()
                 return self.json_response(200, {'requirements': analyze_posting(data['posting']), 'engine': 'rules'})
             if not isinstance(data.get('answer', ''), str) or len(data.get('answer', '')) > 20000 or not isinstance(data.get('turn'), int) or not 0 <= data['turn'] <= 20:
+                raise ValueError()
+            if not isinstance(data.get('focus', ''), str) or not isinstance(data.get('stories', []), list):
                 raise ValueError()
             if data.get('mode') not in ('recruiter', 'behavioral', 'safety', 'negotiation'):
                 raise ValueError()
@@ -296,12 +320,19 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_error(400)
         if data.get('engine') == 'gemini' and GEMINI_KEY:
             try:
-                return self.json_response(200, ai_coach(data))
+                return self.coach_response(data, ai_coach(data))
             except Exception:
                 result = guided_coach(data)
                 result['warning'] = 'AI unavailable or quota reached. Continued in the free guided mode.'
-                return self.json_response(200, result)
-        return self.json_response(200, guided_coach(data))
+                return self.coach_response(data, result)
+        return self.coach_response(data, guided_coach(data))
+
+    def coach_response(self, payload, result):
+        stories = payload.get('stories', [])
+        if not isinstance(stories, list):
+            stories = []
+        result['storySuggestions'] = rank_stories(stories, result.get('question', ''), payload.get('focus', '') or '')
+        return self.json_response(200, result)
 
     def gmail_action(self, data):
         if not gmail_configured():

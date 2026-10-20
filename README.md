@@ -24,7 +24,7 @@ Uses local SQLite in ignored `.data/career.sqlite3` unless `SUPABASE_URL` and `S
 - Role- and requirement-specific free guided coaching, coaching/simulation formats, optional browser dictation, saved answers, and reflections. Guided feedback is rule-based, not AI assessment.
 - Optional Gemini integration: only configured and explicitly selected AI mode makes provider calls. Free quota is provider-dependent; leave billing disabled for free-only use. Guided mode needs no key and is the fallback on AI errors.
 - Manual recruiter email context, editable reply templates, and saved reply drafts. No messages sent; hosted Gmail OAuth is available after setup, while always-on scheduled sync remains unconfigured.
-- Source watchlist, public Greenhouse/Lever employer-feed import with keyword filtering and a deduplicated sourcing inbox. Imports are on demand; no scraping or automatic applications. Job-board alert emails are the planned route for LinkedIn/Indeed coverage.
+- Source watchlist, public Greenhouse/Lever/Ashby/SmartRecruiters feeds and bounded Workday/iCIMS portal import with keyword filtering and a deduplicated sourcing inbox. Imports are on demand; no scraping or automatic applications. Job-board alert emails are the planned route for LinkedIn/Indeed coverage.
 - Evidence worksheet and JSON backup exports, restore with revision checks, and device-draft cleanup.
 
 ## Validate
@@ -61,4 +61,12 @@ See [GMAIL_SETUP.md](GMAIL_SETUP.md) for the free Google OAuth setup. The hosted
 
 Email & sourcing generates LinkedIn/Indeed search packs from editable preferences. Tailored materials generates free evidence-based working drafts with editable placeholders and gap questions. No model or paid job-data service is needed.
 
-[Career Ops review](docs/CAREER_OPS_REVIEW.md) evaluates selective upstream reuse; no upstream code has been copied.
+[Career Ops review](docs/CAREER_OPS_REVIEW.md) evaluates selective upstream reuse; the canonicalization design has since been adapted with attribution in THIRD_PARTY_NOTICES.md.
+
+## Source quality and evidence review
+
+The free sourcing workflow now includes canonical URL deduplication, possible-duplicate flags (never automatic fuzzy merges), source refresh history, coverage/error diagnostics, and last-seen feed observations. Only known tracking parameters are removed; functional posting IDs are preserved. Public providers can change or block access; a failed/partial scan never marks an opportunity closed.
+
+Stories have an explicit factual-review checkbox. Editing story details or confirmed facts clears their confirmation until reviewed again. Existing stories remain intact and need confirmation before supplying facts/figures to tailoring or AI practice.
+
+Before exporting tailored materials, run **Check claims & placeholders**. This flags unfilled fields, figures/dates absent from approved sources, unsupported credentials (unfinished coursework is not a degree), and changes in source versions. It is a heuristic aid, not full fact verification or a licensure check. You can still export an explicitly reviewed working draft with warnings. Story suggestions use explained keyword overlap and no AI service.

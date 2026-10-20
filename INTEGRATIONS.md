@@ -16,8 +16,14 @@ On-demand employer feeds are implemented for:
 
 - Greenhouse: a public board at `https://boards.greenhouse.io/BOARD` or `https://job-boards.greenhouse.io/BOARD`; enter `BOARD` as the slug.
 - Lever: a public board at `https://jobs.lever.co/BOARD`; enter `BOARD` as the slug.
+- Ashby: a public board at `https://jobs.ashbyhq.com/BOARD`; enter `BOARD` as the slug.
+- SmartRecruiters: enter the employer company slug. The list API may omit full descriptions.
+- Workday: enter the full employer careers URL, for example `https://company.wd5.myworkdayjobs.com/External`. Up to three 20-item pages per check, using the vendor's keyword search.
+- iCIMS: enter the full public portal URL, for example `https://careers-company.icims.com`. Up to three public listing pages; access-denial or unrecognized markup is reported as unknown coverage, not zero jobs.
 
-Save the source with its provider, board slug, and optional keywords, then Fetch listings. Every keyword must occur in the title, description, or location (case-insensitive). Review candidates in the inbox and add selected roles. Fetches use fixed provider API hosts, preserve TLS verification, and never submit applications.
+These URLs illustrate formats, not verified employers. Workday/iCIMS/SmartRecruiters summaries need the full original posting before tailoring. Scans disclose caps, failures, matched counts and partial coverage. HTTPS redirects are not followed; no login, CAPTCHA bypass or authenticated account scraping is attempted.
+
+Save the source with its provider, board slug, and optional keywords, then Fetch listings. For feeds/local portal filtering, every keyword must occur in the available title, description, or location (case-insensitive); Workday uses its own search endpoint. Review candidates in the inbox and add selected roles. Fetches use fixed provider API hosts, preserve TLS verification, and never submit applications.
 
 Scheduled sourcing remains next work. Free options include approved job-alert email ingestion and a quota-limited scheduler. No always-on worker or paid job-data API is enabled. A sleeping free Render service alone cannot guarantee scheduled work. An external scheduler requires separate configuration and secret management; do not expose a public unauthenticated trigger.
 
@@ -28,3 +34,5 @@ Scheduled sourcing remains next work. Free options include approved job-alert em
 3. Enable the optional on-open search check if desired; it is not an always-on scheduler.
 4. Add a free external scheduler with deduplication, logs and retry limits after the mailbox search and source coverage are validated.
 5. Expand sources only through supported public endpoints or authorized APIs.
+
+Exact canonical posting URLs consolidate observations without overwriting role notes or approved material. Similar titles/descriptions remain separate and are marked for review. A missing role in a query-limited scan does not establish closure.

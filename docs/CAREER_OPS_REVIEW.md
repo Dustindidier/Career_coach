@@ -1,6 +1,6 @@
 # Career Ops integration review
 
-Reviewed `career-ops-hq/career-ops` at commit `ca5e70b9321daf4765f5143a4aa4d2d135f0d397`, package version 1.37.0. Read-only inspection: no upstream setup scripts, dependencies, agents, or scan commands were run. No code has been copied or fork created.
+Reviewed `career-ops-hq/career-ops` at commit `ca5e70b9321daf4765f5143a4aa4d2d135f0d397`, package version 1.37.0. Read-only inspection: no upstream setup scripts, dependencies, agents, or scan commands were run. The initial review did not copy code or create a fork. Subsequent work adapted the conservative URL canonicalization design with attribution in THIRD_PARTY_NOTICES.md; no upstream CLI or web app is bundled.
 
 ## Recommendation
 

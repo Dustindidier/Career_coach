@@ -23,6 +23,8 @@ def validate_workspace(data):
         ids = [x['id'] for x in data[key]]
         if len(ids) != len(set(ids)):
             return False
+    if not all(isinstance(story.get('confirmed', False), bool) for story in data['stories']):
+        return False
     for job in data['jobs']:
         reqs = job.get('requirements', [])
         if not isinstance(reqs, list) or not all(strings(r, ('id', 'text', 'kind', 'evidenceId', 'note')) and isinstance(r.get('reviewed'), bool) for r in reqs):
@@ -47,6 +49,17 @@ def validate_workspace(data):
     for key, fields in [('sources', ('id', 'name', 'url', 'query')), ('inbox', ('id', 'company', 'title', 'sourceUrl', 'posting'))]:
         items = p.get(key, [])
         if not isinstance(items, list) or not all(strings(x, fields) for x in items):
+            return False
+    for source in p.get('sources', []):
+        runs = source.get('runs', [])
+        last = source.get('lastRun')
+        if not isinstance(runs, list) or not all(strings(r, ('status', 'checkedAt')) for r in runs):
+            return False
+        if last is not None and (not strings(last, ('status', 'checkedAt')) or not isinstance(last.get('warnings', []), list) or not all(isinstance(w, str) for w in last.get('warnings', []))):
+            return False
+    for record in data['jobs'] + p.get('inbox', []):
+        observations = record.get('observations', [])
+        if not isinstance(observations, list) or not all(strings(o, ('source', 'url', 'checkedAt')) for o in observations):
             return False
     return True
 
