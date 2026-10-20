@@ -1,49 +1,56 @@
 # Next Chapter
 
-A single-user career workspace, initially focused on Dustin's Medpace Clinical Safety Nurse preparation.
+A personal career workspace for exploring opportunities beyond bedside nursing, preparing interviews, and keeping reusable career evidence.
 
-## Run
+Live service: https://next-chapter-uqr1.onrender.com (password protected).
 
-Requires Python 3.10+; no third-party runtime dependencies.
+## Run locally
+
+Python 3.10+, no third-party runtime dependencies:
 
 ```sh
-cd /workspace/Career_coach
 python server.py
 ```
 
-Open port 8000 in your browser using your development environment's supported port access. The server binds to `127.0.0.1` by default. `HOST` and `PORT` override the binding; external hosting requires a CAREER_PASSWORD of at least 16 characters and HTTPS; see DEPLOY.md. If access requires `HOST=0.0.0.0`, use only a trusted, access-controlled development environment.
+Uses local SQLite in ignored `.data/career.sqlite3` unless `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set. `CAREER_DB`, `HOST`, and `PORT` are configurable. External binding requires a `CAREER_PASSWORD` of at least 16 characters. Use HTTPS and trusted hosting. Browser Basic authentication is single-user access, not a multi-user account system.
 
 ## Included
 
-- Guided recruiter, behavioral, clinical safety, and negotiation exercises.
-- Optional browser speech recognition (browser support varies; the provider may process audio).
-- Clearly labeled rule-based structure coaching, saved answers, and real-story capture.
-- Editable, explicitly confirmed career memory and opportunity records.
-- Posting and interview notes, evidence worksheet export, JSON backup and restore.
-- SQLite persistence in ignored `.data/career.sqlite3`; `CAREER_DB` overrides the location.
+- Revision-checked cloud and local saves: stale device writes receive 409, never silently overwrite newer data.
+- Browser-local recovery for unsubmitted forms, current interview sessions, and unsaved workspace changes. A recovered conflicting copy can be exported before loading the latest server copy.
+- Editable/searchable story bank; structured career facts with category, source, confirmation, and review date; legacy notes preserved.
+- Resume text / .txt / .md import with candidate selection and per-fact review. No PDF/DOCX parser yet.
+- Opportunity tracking, source passages extracted by free rules, manually reviewed requirements, and evidence mapping to stories or confirmed facts. Text matches are suggestions, not fit scores.
+- Role- and requirement-specific free guided coaching, coaching/simulation formats, optional browser dictation, saved answers, and reflections. Guided feedback is rule-based, not AI assessment.
+- Optional Gemini integration: only configured and explicitly selected AI mode makes provider calls. Free quota is provider-dependent; leave billing disabled for free-only use. Guided mode needs no key and is the fallback on AI errors.
+- Manual recruiter email context, editable reply templates, and saved reply drafts. No messages sent; hosted Gmail OAuth and scheduled sync not yet connected.
+- Source watchlist, public Greenhouse/Lever employer-feed import with keyword filtering and a deduplicated sourcing inbox. Imports are on demand; no scraping or automatic applications. Job-board alert emails are the planned route for LinkedIn/Indeed coverage.
+- Evidence worksheet and JSON backup exports, restore with revision checks, and device-draft cleanup.
 
-New databases start with an empty profile; your existing local database is preserved. Verify the actual job posting, interview date/time zone, compensation, and personal facts.
-
-## Validation
+## Validate
 
 ```sh
 python -m unittest discover -s tests -v
 node --check static/app.js
+# Optional browser checks (isolated temporary server/database):
+npm ci
+npm run test:browser
 ```
 
-## Scope and privacy
+Browser checks need Chromium at `/usr/bin/chromium` or `CHROMIUM_PATH`. Node/Playwright are development-only dependencies, not required to run the app.
 
-No LLM, live job search, scheduled sourcing, resume generation, or outbound messages are connected. Prompts are curated, follow-ups follow a fixed sequence, and feedback uses simple rules; it does not assess clinical correctness or hiring likelihood. Evidence worksheets assemble your own notes, not a tailored resume. Use approved sources and human review when extending these features.
+Tests use isolated storage and do not write to the production workspace. They cover concurrent save conflicts, authentication, invalid imports, coach fallback, requirement extraction, and supported feed normalization.
 
-Data is stored locally in plaintext. Do not enter patient-identifying details. Export sensitive backups carefully. Story and opportunity deletion and practice-history clearing are available in the UI. To delete the entire workspace, stop the server and remove the database; the next launch creates a fresh starter workspace. This is designed for one user and one editing tab; simultaneous edits use last-write-wins.
+## Costs and AI
 
-## Next development steps
+Default workflows have no AI or paid-plugin charges. Hosting is on the existing Render and Supabase free tiers, subject to their limits and sleep/pause behavior. No always-on or paid plan is enabled.
 
-1. Add a secure server-side AI provider integration with evidence-linked feedback and dynamic follow-ups.
-2. Add requirement-to-evidence mapping and reviewable document generation.
-3. Add permitted job-source connectors, fit comparisons, and scheduled discovery.
-4. Replace single-user browser authentication with accounts before multi-user hosting.
+For optional AI: set `GEMINI_API_KEY` in Render only, optionally `GEMINI_MODEL` (default `gemini-2.5-flash-lite`), redeploy, then explicitly select AI mode. Confirm current model availability and free quotas at https://ai.google.dev/gemini-api/docs/pricing and review provider data terms. Model support changes; no AI request has been verified without a configured key. Paid API capacity is optional; guided coaching is the free alternative. For voice, browser dictation remains the free alternative to paid realtime voice.
 
-## Deploy in the cloud
+## Privacy and data
 
-See [DEPLOY.md](DEPLOY.md). A Dockerfile and free Render Blueprint configure a password-protected service with Supabase cloud storage. Hosting resources have not been provisioned.
+Submitted records use the shared server database. Drafts and current session progress are stored in plaintext localStorage on the current device; they are not automatically available on another device. Clear drafts on shared devices. Do not enter patient-identifying information. AI mode sends the selected role (including imported emails), confirmed structured facts, story library, and interview context to the provider after confirmation. No AI calls occur in guided mode.
+
+Exports contain private notes. Keep backups secure. Revision checks prevent silent overwrites but do not merge edits; export a conflicting copy, load current data, and reapply desired changes. Data is still one workspace document; normalized per-record tables and account sign-in remain future upgrades. Automated cloud backups and full history are not included.
+
+See [DEPLOY.md](DEPLOY.md) and [INTEGRATIONS.md](INTEGRATIONS.md).

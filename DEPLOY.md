@@ -16,10 +16,14 @@ GitHub stores the code. Render runs the Python server. Supabase stores the works
 6. Verify: unauthenticated access requires login; add a test story, reload on another device, then redeploy and verify it survives. Confirm both Supabase variables are configured: without them, local SQLite is used and Render's free ephemeral disk will lose records.
 7. To migrate the prepared Medpace workspace, export it from the existing app and restore the JSON backup through Career memory. The repository intentionally contains no personal database or profile facts.
 
-Free-tier limits and availability are controlled by the providers; review their current terms. Render may sleep after inactivity and Supabase free projects may pause; first access can require a wake-up. No paid resources are declared here. Neither account nor service has been provisioned by this repository.
+Free-tier limits and availability are controlled by the providers; review their current terms. Render may sleep after inactivity and Supabase free projects may pause; first access can require a wake-up. No paid resources are declared here. The existing service is deployed at https://next-chapter-uqr1.onrender.com; this file also documents reproducing the setup.
 
-This remains a single-user prototype using browser Basic authentication. Avoid simultaneous edits (last-write-wins). Export JSON backups regularly. A shared cloud database is persistence, not a backup strategy. Multi-user accounts, revision conflict handling, and AI integrations remain future work.
+This remains a single-user prototype using browser Basic authentication. Saves now require a matching revision; stale edits are rejected and can be exported for manual reconciliation. Export JSON backups regularly. A shared cloud database is persistence, not a backup strategy. Multi-user accounts and automatic conflict merging remain future work. Optional Gemini AI is opt-in; the guided default is free.
 
 ## Local development / other hosts
 
 `python server.py` uses local SQLite by default. A Dockerfile is included. External binds require a long `CAREER_PASSWORD`. With local SQLite on another host, attach persistent storage at `/data`; never rely on ephemeral disk. Do not horizontally scale the SQLite configuration.
+
+## Existing-database upgrade
+
+Before deploying this release over v1, run the additive `revision` column statement in `supabase.sql`. It preserves existing workspace JSON. Back up the workspace privately first. Old open browser tabs must reload: saves without `If-Match` now receive 428. New GET responses include an ETag and successful saves increment it atomically.
