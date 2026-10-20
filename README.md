@@ -46,4 +46,4 @@ Data is stored locally in plaintext. Do not enter patient-identifying details. E
 
 ## Deploy in the cloud
 
-See [DEPLOY.md](DEPLOY.md). A Dockerfile and Render Blueprint configure a password-protected service with persistent storage. Hosting resources have not been provisioned.
+See [DEPLOY.md](DEPLOY.md). A Dockerfile and free Render Blueprint configure a password-protected service with Supabase cloud storage. Hosting resources have not been provisioned.

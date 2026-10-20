@@ -1,17 +1,25 @@
-# Cloud deployment
+# Free-tier cloud deployment
 
-GitHub stores the code. Render (or another container host with persistent storage) runs the server and database. GitHub Pages cannot run this Python backend.
+GitHub stores the code. Render runs the Python server. Supabase stores the workspace in Postgres so Render restarts do not delete your records. GitHub Pages cannot run this backend.
 
-## Render
+## Setup
 
-1. Connect your GitHub account to Render and create a Blueprint from this repository. `render.yaml` defines a paid Starter web service and 1 GB persistent disk. Review current pricing before creating resources.
-2. Set `CAREER_PASSWORD` to a unique password of at least 16 characters in Render's secure environment settings. The login username defaults to `owner` (`CAREER_USER`). Do not put passwords in GitHub.
-3. Deploy and open Render's HTTPS service URL on desktop or mobile. Browser authentication protects both the UI and the API. Always use HTTPS. The app refuses an external bind without a long password.
-4. Confirm login is required, save a test story, reload on another device, then redeploy and verify the story survives. The persistent disk must be mounted at `/data` and `CAREER_DB` must reference it.
-5. Restore a JSON backup from Career memory if migrating an existing workspace. The repository intentionally includes no personal profile, notes, or database.
+1. Create a free Supabase project. In its SQL Editor, run `supabase.sql` from this repository. The table has row-level security with no public policies; anonymous/client access is revoked.
+2. Find the project URL and legacy `service_role` API key in Supabase settings. Keep that key private: it bypasses RLS. It belongs only in Render's server environment, never in browser code, GitHub, or chat.
+3. Connect your GitHub account to Render. Create a Blueprint from this repository (`main`). `render.yaml` selects the free plan, with no paid disk.
+4. In Render's secure environment settings enter:
+   - `SUPABASE_URL`: your HTTPS project URL.
+   - `SUPABASE_SERVICE_ROLE_KEY`: the service-role key.
+   - `CAREER_PASSWORD`: a unique password of at least 16 characters.
+   - `CAREER_USER`: defaults to `owner`.
+5. Deploy. Open Render's HTTPS URL on desktop or mobile and sign in with the username/password. Always use HTTPS.
+6. Verify: unauthenticated access requires login; add a test story, reload on another device, then redeploy and verify it survives. Confirm both Supabase variables are configured: without them, local SQLite is used and Render's free ephemeral disk will lose records.
+7. To migrate the prepared Medpace workspace, export it from the existing app and restore the JSON backup through Career memory. The repository intentionally contains no personal database or profile facts.
 
-The same URL and login access the same single-user database on every device. Avoid editing the same workspace simultaneously: the current save model is last-write-wins. This deployment is a personal prototype with browser Basic authentication, not a multi-user account system. Password rotation is through the hosting settings. Use workspace exports as backups; a persistent disk alone is not a backup strategy.
+Free-tier limits and availability are controlled by the providers; review their current terms. Render may sleep after inactivity and Supabase free projects may pause; first access can require a wake-up. No paid resources are declared here. Neither account nor service has been provisioned by this repository.
 
-## Other hosts
+This remains a single-user prototype using browser Basic authentication. Avoid simultaneous edits (last-write-wins). Export JSON backups regularly. A shared cloud database is persistence, not a backup strategy. Multi-user accounts, revision conflict handling, and AI integrations remain future work.
 
-Build the Dockerfile, supply `CAREER_PASSWORD`, terminate HTTPS at the host, and attach a persistent volume at `/data`. Do not deploy SQLite on an ephemeral filesystem or horizontally scale this version. Review costs before provisioning. No hosting resources are created by adding these files.
+## Local development / other hosts
+
+`python server.py` uses local SQLite by default. A Dockerfile is included. External binds require a long `CAREER_PASSWORD`. With local SQLite on another host, attach persistent storage at `/data`; never rely on ephemeral disk. Do not horizontally scale the SQLite configuration.

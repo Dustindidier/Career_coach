@@ -4,6 +4,7 @@ import json
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -67,6 +68,21 @@ class WorkspaceTests(unittest.TestCase):
                 self.assertIn('profile', json.load(r))
         finally:
             app.AUTH_PASSWORD = old
+
+    def test_cloud_storage_initializes_and_updates_workspace(self):
+        with patch.object(app, 'SUPABASE_URL', 'https://example.supabase.co'):
+            with patch.object(app, 'cloud_request', side_effect=[[], None, [{'body': app.SEED}]]) as remote:
+                self.assertEqual(app.read_workspace(), app.SEED)
+                self.assertEqual(remote.call_args_list[1].args, ('POST', {'id': 1, 'body': app.SEED}))
+            with patch.object(app, 'cloud_request', side_effect=[[{'body': app.SEED}], None]) as remote:
+                app.write_workspace(app.SEED)
+                self.assertEqual(remote.call_args_list[-1].args, ('PATCH', {'body': app.SEED}, '?id=eq.1'))
+
+    def test_storage_failure_returns_503(self):
+        with patch.object(app, 'read_workspace', side_effect=RuntimeError('storage unavailable')):
+            with self.assertRaises(urllib.error.HTTPError) as cm:
+                self.request()
+            self.assertEqual(cm.exception.code, 503)
 
     def test_frontend_served(self):
         with urllib.request.urlopen(self.url+'/') as r:
