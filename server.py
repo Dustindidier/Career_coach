@@ -5,8 +5,14 @@ import hmac
 import urllib.request
 import os
 import sqlite3
+import threading
+import secrets
+import urllib.parse
+from http.cookies import SimpleCookie
 from domain import validate_workspace, analyze_posting, guided_coach
 from sources import fetch_jobs
+from career import search_plan, tailor
+from gmail import Gmail, start_oauth, verify_oauth, alert_links, context_hints
 from pathlib import Path
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
@@ -22,6 +28,12 @@ SUPABASE_URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
 SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')
 GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
 GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash-lite')
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL', os.environ.get('RENDER_EXTERNAL_URL', '')).rstrip('/')
+GMAIL_REDIRECT_URI = PUBLIC_BASE_URL + '/oauth/gmail/callback'
+OAUTH_SIGNING_KEY = AUTH_PASSWORD or secrets.token_urlsafe(32)
+GMAIL_LOCK = threading.RLock()
 
 class Conflict(Exception):
     pass
@@ -104,9 +116,31 @@ def ai_coach(payload):
     return {**data, 'engine': 'gemini', 'label': 'AI coach · review suggestions for accuracy'}
 
 
+def gmail_configured():
+    return bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and PUBLIC_BASE_URL.startswith('https://') and SUPABASE_URL and SUPABASE_KEY)
+
+
+def integration_rpc(name, body=None):
+    req = urllib.request.Request(SUPABASE_URL + '/rest/v1/rpc/career_gmail_' + name,
+        data=json.dumps(body or {}).encode(), method='POST', headers={'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json'})
+    with urllib.request.urlopen(req, timeout=20) as response:
+        raw = response.read()
+        return json.loads(raw) if raw else None
+
+
+def gmail_client():
+    return Gmail(lambda: integration_rpc('read'), lambda tokens: integration_rpc('write', {'token_body': tokens}),
+                 lambda: integration_rpc('delete'), GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GMAIL_REDIRECT_URI)
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT / 'static'), **kwargs)
+
+    def log_request(self, code='-', size='-'):
+        # OAuth codes and user search queries must not appear in access logs.
+        self.log_message('"%s %s" %s %s', self.command, urllib.parse.urlsplit(self.path).path, code, size)
 
     def authenticated(self):
         if not AUTH_PASSWORD:
@@ -124,11 +158,13 @@ class Handler(SimpleHTTPRequestHandler):
         if self.authenticated():
             super().do_HEAD()
 
-    def json_response(self, status, data, revision=None):
+    def json_response(self, status, data, revision=None, cookie=None):
         body = json.dumps(data).encode()
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Cache-Control', 'no-store')
+        if cookie:
+            self.send_header('Set-Cookie', cookie)
         if revision is not None:
             self.send_header('ETag', '"' + str(revision) + '"')
         self.end_headers()
@@ -156,6 +192,22 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if not self.authenticated():
             return
+        if urllib.parse.urlsplit(self.path).path == '/oauth/gmail/callback':
+            return self.gmail_callback()
+        if self.path == '/api/gmail/status':
+            configured = gmail_configured()
+            try:
+                tokens = integration_rpc('read') if configured else None
+                return self.json_response(200, {'configured': configured, 'connected': bool(tokens),
+                    'email': tokens.get('email', '') if tokens else '', 'redirectUri': GMAIL_REDIRECT_URI})
+            except Exception:
+                return self.json_response(200, {'configured': configured, 'connected': False, 'storageError': True, 'redirectUri': GMAIL_REDIRECT_URI})
+        if self.path == '/api/search-plan':
+            try:
+                workspace, _ = read_snapshot()
+                return self.json_response(200, search_plan(workspace['profile'].get('searchPreferences', {})))
+            except Exception:
+                return self.send_error(503, 'Search preferences unavailable')
         if self.path == '/api/capabilities':
             return self.json_response(200, {'guided': True, 'ai': bool(GEMINI_KEY), 'aiProvider': 'Gemini' if GEMINI_KEY else None})
         if self.path == '/api/workspace':
@@ -203,12 +255,22 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if not self.same_origin():
             return self.send_error(403)
-        if self.path not in ('/api/analyze', '/api/coach', '/api/source-preview'):
+        if self.path not in ('/api/analyze', '/api/coach', '/api/source-preview', '/api/tailor', '/api/gmail/connect', '/api/gmail/preview', '/api/gmail/draft', '/api/gmail/disconnect'):
             return self.send_error(404)
         try:
             data = self.read_json()
             if not isinstance(data, dict):
                 raise ValueError()
+            if self.path.startswith('/api/gmail/'):
+                return self.gmail_action(data)
+            if self.path == '/api/tailor':
+                if not isinstance(data.get('jobId'), str):
+                    raise ValueError()
+                try:
+                    workspace, _ = read_snapshot()
+                except Exception:
+                    return self.send_error(503, 'Workspace unavailable')
+                return self.json_response(200, tailor(workspace, data['jobId']))
             if self.path == '/api/source-preview':
                 if not all(isinstance(data.get(k, ''), str) for k in ('provider', 'board', 'query')):
                     raise ValueError()
@@ -240,6 +302,72 @@ class Handler(SimpleHTTPRequestHandler):
                 result['warning'] = 'AI unavailable or quota reached. Continued in the free guided mode.'
                 return self.json_response(200, result)
         return self.json_response(200, guided_coach(data))
+
+    def gmail_action(self, data):
+        if not gmail_configured():
+            return self.json_response(503, {'error': 'Add Google OAuth credentials in Render first. See the Gmail setup guide.'})
+        try:
+            with GMAIL_LOCK:
+                client = gmail_client()
+                if self.path == '/api/gmail/connect':
+                    url, cookie = start_oauth(GOOGLE_CLIENT_ID, GMAIL_REDIRECT_URI, OAUTH_SIGNING_KEY)
+                    return self.json_response(200, {'url': url}, cookie='gmail_oauth=' + cookie + '; HttpOnly; Secure; SameSite=Lax; Path=/oauth/gmail/callback; Max-Age=600')
+                if self.path == '/api/gmail/preview':
+                    if not isinstance(data.get('query'), str) or not data['query'].strip() or len(data['query']) > 500:
+                        raise ValueError('Enter a search query of 1–500 characters.')
+                    messages = client.preview(data['query'])
+                    workspace, _ = read_snapshot()
+                    for message in messages:
+                        message['hints'] = context_hints(message, workspace['jobs'])
+                        message['listings'] = alert_links(message)
+                    return self.json_response(200, {'messages': messages, 'imported': False, 'limit': 10})
+                if self.path == '/api/gmail/draft':
+                    if data.get('confirmed') is not True or not all(isinstance(data.get(k), str) and data[k].strip() for k in ('to', 'subject', 'body')):
+                        raise ValueError('Review the recipient, subject, and body before creating a Gmail draft.')
+                    if len(data['body']) > 40000 or len(data['subject']) > 500:
+                        raise ValueError('Draft too large.')
+                    return self.json_response(200, client.create_draft(data['to'], data['subject'], data['body']))
+                if self.path == '/api/gmail/disconnect':
+                    tokens = client.read()
+                    revoked = False
+                    if tokens:
+                        try:
+                            req = urllib.request.Request('https://oauth2.googleapis.com/revoke',
+                                data=urllib.parse.urlencode({'token': tokens.get('refresh_token', '')}).encode(),
+                                headers={'Content-Type': 'application/x-www-form-urlencoded'}, method='POST')
+                            with urllib.request.urlopen(req, timeout=15):
+                                revoked = True
+                        except Exception:
+                            pass
+                    client.delete()
+                    return self.json_response(200, {'disconnected': True, 'revoked': revoked})
+        except ValueError as error:
+            return self.json_response(400, {'error': str(error)})
+        except Exception:
+            return self.json_response(502, {'error': 'Gmail could not complete this action. Check consent, Gmail API enablement, or reconnect if access expired. No email was sent.'})
+
+    def gmail_callback(self):
+        expired = 'gmail_oauth=; HttpOnly; Secure; SameSite=Lax; Path=/oauth/gmail/callback; Max-Age=0'
+        try:
+            if not gmail_configured():
+                raise ValueError()
+            query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+            cookies = SimpleCookie(self.headers.get('Cookie', ''))
+            state = query.get('state', [''])[0]
+            code = query.get('code', [''])[0]
+            if not code or 'gmail_oauth' not in cookies:
+                raise ValueError()
+            verifier = verify_oauth(cookies['gmail_oauth'].value, state, OAUTH_SIGNING_KEY)
+            with GMAIL_LOCK:
+                gmail_client().authorize(code, verifier)
+            self.send_response(303)
+            self.send_header('Location', '/?gmail=connected#integrations')
+            self.send_header('Set-Cookie', expired)
+            self.send_header('Cache-Control', 'no-store')
+            self.send_header('Referrer-Policy', 'no-referrer')
+            self.end_headers()
+        except Exception:
+            return self.json_response(400, {'error': 'Gmail authorization was not completed. Return to Email & sourcing and reconnect. Check the redirect URI, test-user setting, and both Gmail permissions.'}, cookie=expired)
 
 if __name__ == '__main__':
     host, port = os.environ.get('HOST', '127.0.0.1'), int(os.environ.get('PORT', '8000'))

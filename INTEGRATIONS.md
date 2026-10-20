@@ -4,9 +4,9 @@
 
 A Gmail plugin connection in ChatGPT can help review relevant recruiter conversations and draft replies in chat. It does not automatically provide OAuth credentials or scheduled access to the separately hosted Next Chapter app.
 
-Hosted sync needs a Google Cloud OAuth app, enabled Gmail API, and user consent. Start with read access to relevant recruiter threads and draft creation; keep send approval explicit. Search by opportunity/company and allow the user to review proposed matches, extracted interview dates/time zones, stage updates, and negotiation details. Retain only relevant context. Do not silently ingest the entire mailbox.
+Hosted Gmail authorization is implemented; activation needs a Google Cloud OAuth app, enabled Gmail API, and user consent. See GMAIL_SETUP.md. Start with read access to relevant recruiter threads and draft creation; keep send approval explicit. Search by opportunity/company and allow the user to review proposed matches, extracted interview dates/time zones, stage updates, and negotiation details. Retain only relevant context. Do not silently ingest the entire mailbox.
 
-Google API access is generally quota-based rather than a paid plugin, but OAuth configuration/verification and personal testing restrictions apply. No Gmail credentials or scheduler are configured in the hosted app yet. The current free alternative is manual message import and local reply drafts in Email & sourcing.
+Google API access is generally quota-based rather than a paid plugin, but OAuth configuration/verification and personal testing restrictions apply. The connector is available once Google credentials and consent are supplied; no always-on scheduler is configured. Manual message import and workspace reply drafts remain available without connecting Google.
 
 ## Job sourcing
 
@@ -21,10 +21,10 @@ Save the source with its provider, board slug, and optional keywords, then Fetch
 
 Scheduled sourcing remains next work. Free options include approved job-alert email ingestion and a quota-limited scheduler. No always-on worker or paid job-data API is enabled. A sleeping free Render service alone cannot guarantee scheduled work. An external scheduler requires separate configuration and secret management; do not expose a public unauthenticated trigger.
 
-## Future implementation order
+## Activation and next steps
 
-1. Complete Gmail consent and verify mailbox access in chat.
-2. Configure hosted OAuth and store refresh credentials server-side, separate from exported career data.
-3. Add reviewed email-to-opportunity suggestions and draft creation.
-4. Add free scheduled alert/feed checks with deduplication, logs, and retry limits.
-5. Add notifications and wider sources only through supported access methods.
+1. Supply the Google OAuth client credentials in Render and complete consent in the app (see GMAIL_SETUP.md).
+2. Use the implemented reviewed email-to-opportunity imports, alert-link intake and unsent Gmail draft creation.
+3. Enable the optional on-open search check if desired; it is not an always-on scheduler.
+4. Add a free external scheduler with deduplication, logs and retry limits after the mailbox search and source coverage are validated.
+5. Expand sources only through supported public endpoints or authorized APIs.

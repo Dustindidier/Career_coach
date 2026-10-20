@@ -9,7 +9,7 @@ import urllib.request
 import urllib.error
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 spec = importlib.util.spec_from_file_location('career_server', Path(__file__).parents[1] / 'server.py')
 app = importlib.util.module_from_spec(spec)
@@ -18,7 +18,7 @@ spec.loader.exec_module(app)
 class WorkspaceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.storage_patch = patch.multiple(app, SUPABASE_URL='', SUPABASE_KEY='', AUTH_PASSWORD='', GEMINI_KEY='')
+        cls.storage_patch = patch.multiple(app, SUPABASE_URL='', SUPABASE_KEY='', AUTH_PASSWORD='', GEMINI_KEY='', GOOGLE_CLIENT_ID='', GOOGLE_CLIENT_SECRET='')
         cls.storage_patch.start()
         cls.tmp = tempfile.TemporaryDirectory()
         app.DB = Path(cls.tmp.name) / 'test.sqlite3'
@@ -99,7 +99,7 @@ class WorkspaceTests(unittest.TestCase):
 
     def test_authentication_protects_workspace_and_coach(self):
         with patch.object(app,'AUTH_PASSWORD','test-password-long-enough'):
-            for path in ['/api/workspace','/api/capabilities']:
+            for path in ['/api/workspace','/api/capabilities','/api/gmail/status']:
                 with self.assertRaises(urllib.error.HTTPError) as cm:urllib.request.urlopen(self.url+path)
                 self.assertEqual(cm.exception.code,401)
             with self.assertRaises(urllib.error.HTTPError) as cm:self.post('/api/coach',{})
@@ -137,6 +137,39 @@ class WorkspaceTests(unittest.TestCase):
         with patch.object(app,'GEMINI_KEY','fake'),patch.object(app,'ai_coach',side_effect=RuntimeError('quota')):
             with self.post('/api/coach',{'engine':'gemini','turn':1,'mode':'recruiter','answer':'A short answer','job':{}}) as r:result=json.load(r)
             self.assertEqual(result['engine'],'guided');self.assertIn('quota',result['warning'])
+
+    def test_gmail_not_configured_is_explicit(self):
+        with urllib.request.urlopen(self.url+'/api/gmail/status') as r:
+            data=json.load(r);self.assertFalse(data['configured']);self.assertFalse(data['connected'])
+        with self.assertRaises(urllib.error.HTTPError) as cm:self.post('/api/gmail/connect',{})
+        self.assertEqual(cm.exception.code,503)
+
+    def test_oauth_start_sets_secure_cookie_and_uses_pkce(self):
+        with patch.object(app,'gmail_configured',return_value=True):
+            with self.post('/api/gmail/connect',{}) as r:
+                data=json.load(r);cookie=r.headers['Set-Cookie']
+                self.assertIn('HttpOnly',cookie);self.assertIn('Secure',cookie);self.assertIn('SameSite=Lax',cookie)
+                self.assertIn('code_challenge=',data['url'])
+
+    def test_gmail_draft_requires_explicit_review(self):
+        with patch.object(app,'gmail_configured',return_value=True),patch.object(app,'gmail_client') as client:
+            with self.assertRaises(urllib.error.HTTPError) as cm:self.post('/api/gmail/draft',{'to':'r@example.com','subject':'Hi','body':'Hello'})
+            self.assertEqual(cm.exception.code,400);client.return_value.create_draft.assert_not_called()
+
+    def test_successful_oauth_callback_does_not_expose_tokens(self):
+        from gmail import start_oauth
+        from urllib.parse import parse_qs,urlsplit,urlencode
+        url,cookie=start_oauth('client',app.GMAIL_REDIRECT_URI,app.OAUTH_SIGNING_KEY)
+        state=parse_qs(urlsplit(url).query)['state'][0]
+        # Disable redirects: inspect the callback response itself.
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self,*args,**kwargs):return None
+        req=urllib.request.Request(self.url+'/oauth/gmail/callback?'+urlencode({'state':state,'code':'dummy-code'}),headers={'Cookie':'gmail_oauth='+cookie})
+        with patch.object(app,'gmail_configured',return_value=True),patch.object(app,'gmail_client') as client:
+            with self.assertRaises(urllib.error.HTTPError) as cm:urllib.request.build_opener(NoRedirect).open(req)
+            self.assertEqual(cm.exception.code,303)
+            self.assertEqual(cm.exception.headers['Location'],'/?gmail=connected#integrations')
+            client.return_value.authorize.assert_called_once()
 
     def test_analysis_returns_only_source_passages(self):
         text='Must hold an active RN license.\nPrepare safety narratives and communicate with sites.\nResearch experience preferred.'

@@ -23,7 +23,7 @@ Uses local SQLite in ignored `.data/career.sqlite3` unless `SUPABASE_URL` and `S
 - Opportunity tracking, source passages extracted by free rules, manually reviewed requirements, and evidence mapping to stories or confirmed facts. Text matches are suggestions, not fit scores.
 - Role- and requirement-specific free guided coaching, coaching/simulation formats, optional browser dictation, saved answers, and reflections. Guided feedback is rule-based, not AI assessment.
 - Optional Gemini integration: only configured and explicitly selected AI mode makes provider calls. Free quota is provider-dependent; leave billing disabled for free-only use. Guided mode needs no key and is the fallback on AI errors.
-- Manual recruiter email context, editable reply templates, and saved reply drafts. No messages sent; hosted Gmail OAuth and scheduled sync not yet connected.
+- Manual recruiter email context, editable reply templates, and saved reply drafts. No messages sent; hosted Gmail OAuth is available after setup, while always-on scheduled sync remains unconfigured.
 - Source watchlist, public Greenhouse/Lever employer-feed import with keyword filtering and a deduplicated sourcing inbox. Imports are on demand; no scraping or automatic applications. Job-board alert emails are the planned route for LinkedIn/Indeed coverage.
 - Evidence worksheet and JSON backup exports, restore with revision checks, and device-draft cleanup.
 
@@ -54,3 +54,11 @@ Submitted records use the shared server database. Drafts and current session pro
 Exports contain private notes. Keep backups secure. Revision checks prevent silent overwrites but do not merge edits; export a conflicting copy, load current data, and reapply desired changes. Data is still one workspace document; normalized per-record tables and account sign-in remain future upgrades. Automated cloud backups and full history are not included.
 
 See [DEPLOY.md](DEPLOY.md) and [INTEGRATIONS.md](INTEGRATIONS.md).
+
+## Gmail, search planning, and tailoring
+
+See [GMAIL_SETUP.md](GMAIL_SETUP.md) for the free Google OAuth setup. The hosted app now supports consent, chosen-search previews, reviewed context imports, LinkedIn/Indeed alert-link intake, and explicitly confirmed unsent Gmail drafts. Tokens use Supabase Vault (`gmail.sql`), separate from exports. Google credentials and real consent are required before mailbox access can be verified.
+
+Email & sourcing generates LinkedIn/Indeed search packs from editable preferences. Tailored materials generates free evidence-based working drafts with editable placeholders and gap questions. No model or paid job-data service is needed.
+
+[Career Ops review](docs/CAREER_OPS_REVIEW.md) evaluates selective upstream reuse; no upstream code has been copied.

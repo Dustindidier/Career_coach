@@ -33,6 +33,17 @@ def validate_workspace(data):
             return False
         if not isinstance(job.get('replyDraft', ''), str):
             return False
+    preferences = p.get('searchPreferences', {})
+    if not isinstance(preferences, dict) or not all(isinstance(preferences.get(k, ''), str) for k in ('location', 'remote', 'compensation', 'constraints')):
+        return False
+    if not isinstance(preferences.get('roles', []), list) or not all(isinstance(x, str) for x in preferences.get('roles', [])):
+        return False
+    if not isinstance(p.get('gmailQuery', ''), str) or not isinstance(p.get('gmailAutoCheck', False), bool):
+        return False
+    for job in data['jobs']:
+        materials = job.get('materials', {})
+        if not isinstance(materials, dict) or not all(isinstance(materials.get(k, ''), str) for k in ('resume', 'coverLetter')):
+            return False
     for key, fields in [('sources', ('id', 'name', 'url', 'query')), ('inbox', ('id', 'company', 'title', 'sourceUrl', 'posting'))]:
         items = p.get(key, [])
         if not isinstance(items, list) or not all(strings(x, fields) for x in items):
