@@ -87,6 +87,13 @@ class Handler(SimpleHTTPRequestHandler):
             super().do_HEAD()
 
     def do_GET(self):
+        if self.path == '/healthz':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Cache-Control', 'no-store')
+            self.end_headers()
+            self.wfile.write(b'{"status":"ok"}')
+            return
         if not self.authenticated():
             return
         if self.path == '/api/workspace':
@@ -109,7 +116,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if self.path != '/api/workspace':
             return self.send_error(404)
-        # Reject browser requests originating on another site. No public hosting/auth in v1.
+        # Reject browser writes originating on another site.
         origin = self.headers.get('Origin')
         if origin and origin not in ('http://' + self.headers.get('Host', ''), 'https://' + self.headers.get('Host', '')):
             return self.send_error(403)

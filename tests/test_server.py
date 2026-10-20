@@ -16,6 +16,8 @@ spec.loader.exec_module(app)
 class WorkspaceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.storage_patch = patch.multiple(app, SUPABASE_URL='', SUPABASE_KEY='', AUTH_PASSWORD='')
+        cls.storage_patch.start()
         cls.tmp = tempfile.TemporaryDirectory()
         app.DB = Path(cls.tmp.name) / 'test.sqlite3'
         cls.server = app.ThreadingHTTPServer(('127.0.0.1', 0), app.Handler)
@@ -28,6 +30,7 @@ class WorkspaceTests(unittest.TestCase):
         cls.server.shutdown()
         cls.server.server_close()
         cls.tmp.cleanup()
+        cls.storage_patch.stop()
 
     def request(self, data=None, origin=None):
         headers={'Content-Type': 'application/json'}
@@ -83,6 +86,11 @@ class WorkspaceTests(unittest.TestCase):
             with self.assertRaises(urllib.error.HTTPError) as cm:
                 self.request()
             self.assertEqual(cm.exception.code, 503)
+
+    def test_health_check_exposes_no_workspace_without_login(self):
+        with patch.object(app, 'AUTH_PASSWORD', 'test-password-long-enough'):
+            with urllib.request.urlopen(self.url+'/healthz') as r:
+                self.assertEqual(json.load(r), {'status': 'ok'})
 
     def test_frontend_served(self):
         with urllib.request.urlopen(self.url+'/') as r:
