@@ -15,6 +15,10 @@ Operate as the shared career workflow for this project. Read `AGENTS.md` and `RE
 4. Use current active guidance to research real postings. Compare recurring base pay and advancement together, with an explicit route into the desired field; identify indirect routes, qualification gaps, estimates and travel tradeoffs. Do not infer global preferences from one Yes/No decision.
 5. Return a Discover research batch with original source links, checked date, evidence, relevant fit reasons and concerns. Include the research brief revision in availabilityEvidence. Capture decision reasons in the app, return new feedback, and obtain a fresh brief for the next search. This is a repeatable session workflow, not an always-on cross-chat connection.
 
+## Career advancement planning
+
+For each researched or tracked role, explain fit outside bedside and build a conditional career ladder. Include cumulative years from entering the role, estimated annual base in current dollars, source quality/date, experience to acquire, and a concrete readiness gate for each next move. Distinguish employer-published entry pay from broader planning estimates. Identify direct trial/pharma/biotech paths versus device, hospital-quality or education paths requiring another transition. Do not count clinical tenure as research tenure, imply automatic promotions, or confuse research patient care with a fully non-patient-facing role. Preserve existing application stages and materials when adding plans. Save source-linked user priorities and carry careerPath data when promoting Discover records.
+
 ## Relevance and freshness checks
 
 - Current saved preferences take precedence over an older assistant-reported target. Preserve the old assertion as superseded with provenance; ask only when current user guidance itself conflicts or remains unclear.

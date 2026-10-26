@@ -6,6 +6,25 @@ from feedback import valid_feedback
 CATEGORIES = ('Experience', 'Education', 'Credential', 'Accomplishment', 'Preference', 'Skill')
 
 
+def valid_career_path(path):
+    if not isinstance(path, dict) or path.get('schemaVersion') != 1:
+        return False
+    for key in ('summary', 'bedsideFit', 'industryBridge', 'entryFit', 'assumptions', 'updatedAt'):
+        if not isinstance(path.get(key), str) or len(path[key]) > 12000:
+            return False
+    for key in ('milestones', 'gaps', 'questions'):
+        if not isinstance(path.get(key), list) or len(path[key]) > 20 or not all(isinstance(x, str) and len(x) <= 4000 for x in path[key]):
+            return False
+    if not isinstance(path.get('steps'), list) or not 1 <= len(path['steps']) <= 8:
+        return False
+    for step in path['steps']:
+        if not isinstance(step, dict) or not all(isinstance(step.get(k), str) and len(step[k]) <= 6000 for k in ('timeframe', 'role', 'salary', 'basis', 'experience', 'gate')):
+            return False
+    if not isinstance(path.get('sources'), list) or len(path['sources']) > 12:
+        return False
+    return all(isinstance(x, dict) and all(isinstance(x.get(k), str) and len(x[k]) <= 3000 for k in ('label', 'url', 'note')) and x['url'].startswith(('https://', 'http://')) for x in path['sources'])
+
+
 def validate_workspace(data):
     if not isinstance(data, dict) or set(data) != {'profile', 'jobs', 'stories', 'sessions'}:
         return False
@@ -86,6 +105,9 @@ def validate_workspace(data):
         if not isinstance(runs, list) or not all(strings(r, ('status', 'checkedAt')) for r in runs):
             return False
         if last is not None and (not strings(last, ('status', 'checkedAt')) or not isinstance(last.get('warnings', []), list) or not all(isinstance(w, str) for w in last.get('warnings', []))):
+            return False
+    for record in data['jobs'] + discovery:
+        if 'careerPath' in record and not valid_career_path(record['careerPath']):
             return False
     for record in data['jobs'] + p.get('inbox', []):
         observations = record.get('observations', [])

@@ -46,3 +46,7 @@ The private local `.career-private/research-feedback-inbox.json`, when present, 
 Use the same comparison for each role: compensation evidence, realistic entry requirements, a concrete next career step, and the main drawback. Distinguish immediate prospects from recruiter-screen-first or future/stretch options. Current saved preferences supersede older assistant-reported targets without erasing their provenance. Role-level interest does not relax global constraints.
 
 Deduplicate new batches against all prior Discover decisions and tracked roles, including alternate syndicated URLs. Check individual employer requisitions and record access limitations; exclude confirmed closed roles. A remotely indexed field role still needs travel and residency checks. Keep private batches and application materials out of Git; app data persists independently of code deployments.
+
+## Projected career ladders
+
+Tracked opportunities and researched Discover records can carry a structured `careerPath`. The ladder distinguishes fit outside bedside, entry qualifications, direct versus indirect industry bridges, cumulative timelines, salary evidence, experience milestones and readiness gates. Future salaries are current-dollar base-pay estimates, not employer commitments; bonuses and equity stay separate. Discover promotion preserves the ladder. Adding a plan does not change application stages or materials. New research should include a ladder and refresh salary references rather than assuming an old projection remains current.
