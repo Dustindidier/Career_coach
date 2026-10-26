@@ -1,6 +1,9 @@
 """Reviewed application-preparation packets; no browser control or submission."""
 import hashlib
 import json
+import base64
+import re
+from material_exports import pdf
 from intelligence import audit_materials, source_digest
 from urllib.parse import urlsplit
 
@@ -32,7 +35,15 @@ def preparation_packet(workspace, job_id):
     audit = audit_materials(workspace, job, materials.get('resume', '') + '\n' + materials.get('coverLetter', ''), materials.get('sourceDigest', ''))
     if audit['issues']:
         raise ValueError('Resolve the claims/placeholder/source checks in Tailored materials before approving an application packet.')
-    return {'version': 1, 'job': {k: job.get(k, '') for k in ('id', 'company', 'title', 'sourceUrl')},
+    uploads=[]
+    for kind in ('resume','coverLetter'):
+        text=materials.get(kind,'')
+        if not text.strip():continue
+        raw=pdf(text,kind)
+        filename=re.sub(r'[^a-zA-Z0-9_-]+','_',workspace['profile']['name']+'_'+job['company']+'_'+job['title']+'_'+kind)[:180]+'.pdf'
+        uploads.append({'kind':kind,'filename':filename,'mimeType':'application/pdf','sha256':hashlib.sha256(raw).hexdigest(),'base64':base64.b64encode(raw).decode()})
+    return {'version': 2, 'job': {k: job.get(k, '') for k in ('id', 'company', 'title', 'sourceUrl')},
+            'preparedDocuments':uploads,
             'sourceDocuments': [{'id':d['id'],'kind':d['kind'],'filename':d['filename'],'sha256':d['sha256'],'downloadUrl':'https://next-chapter-uqr1.onrender.com/api/documents/download?id='+d['id'],'use':'Reference only; prepare and approve target-specific files before upload.'} for d in workspace['profile'].get('referenceDocuments',[]) if d.get('approvedForDrafting')],
             'candidateName': workspace['profile']['name'], 'confirmedFacts': facts,
             'resumeText': materials['resume'], 'coverLetterText': materials.get('coverLetter', ''),

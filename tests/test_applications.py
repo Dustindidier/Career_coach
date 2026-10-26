@@ -19,6 +19,13 @@ class ApplicationTests(unittest.TestCase):
         self.assertEqual(packet['job']['sourceUrl'],j['sourceUrl'])
         self.assertNotIn('private',[e['id'] for e in packet['confirmedFacts']])
         self.assertNotIn('send',packet['allowedActions'])
+        import base64,hashlib,io
+        from pypdf import PdfReader
+        self.assertEqual(len(packet['preparedDocuments']),2)
+        resume=packet['preparedDocuments'][0]
+        raw=base64.b64decode(resume['base64'])
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),resume['sha256'])
+        self.assertIn(j['materials']['resume'],PdfReader(io.BytesIO(raw)).pages[0].extract_text())
 
     def test_existing_application_cannot_be_prepared_as_new_submission(self):
         for stage in ('Applied','Interviewing','Offer','Closed'):

@@ -31,6 +31,9 @@ class WorkspaceTests(unittest.TestCase):
     def tearDownClass(cls):
         cls.server.shutdown()
         cls.server.server_close()
+        # SQLite context managers commit but do not close; collect released test connections on Windows.
+        import gc
+        gc.collect()
         cls.tmp.cleanup()
         cls.storage_patch.stop()
 

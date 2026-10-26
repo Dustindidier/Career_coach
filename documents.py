@@ -66,6 +66,7 @@ def draft_from_letter(text, job, name):
     body=[]
     for p in paragraphs:
         if p.startswith(('At ','Staff development')):
+            p=re.sub(r'These responsibilities developed[^.]*\.', 'These responsibilities developed the prioritization, follow-through, and team coordination I would bring to this role.', p)
             body.append(re.sub(r'These experiences align with[^.]*\.', 'These experiences support my interest in applying clinical leadership and documentation quality skills in a new role.', p))
     # Use the user's browser-selected application date in the editor; do not invent a submission date.
     return '\n\n'.join(['[Review application date]','Hiring Committee\n'+job['company'],
@@ -76,24 +77,38 @@ def draft_from_letter(text, job, name):
         'Thank you for your consideration.','Sincerely,\n'+name])
 
 
-def docx(text):
+def docx(text, kind='resume'):
+    from material_exports import blocks
     ET.register_namespace('w',WORD)
     tag=lambda name:'{'+WORD+'}'+name
     root=ET.Element(tag('document'));body=ET.SubElement(root,tag('body'))
-    for index,line in enumerate(text.splitlines()):
+    for style,line in blocks(text,kind):
         p=ET.SubElement(body,tag('p'));props=ET.SubElement(p,tag('pPr'))
-        if index==0 or (line.strip() and line.strip().isupper() and len(line)<90):
-            ET.SubElement(props,tag('pStyle'),{tag('val'):'Title' if index==0 else 'Heading1'})
+        if style in ('name','heading','job','subject','target'):
+            ET.SubElement(props,tag('keepNext'))
+        if kind=='resume' and line=='PROFESSIONAL EXPERIENCE CONTINUED':
+            ET.SubElement(props,tag('pageBreakBefore'))
+        ET.SubElement(props,tag('widowControl'))
+        ET.SubElement(props,tag('spacing'),{tag('before'):'100' if style=='heading' else '0',tag('after'):'140' if kind=='coverLetter' else '50',tag('line'):'270' if kind=='coverLetter' else '240',tag('lineRule'):'auto'})
+        if style=='address':
+            props.find(tag('spacing')).set(tag('after'),'40')
+        if style in ('name','heading'):
+            ET.SubElement(props,tag('pStyle'),{tag('val'):'Title' if style=='name' else 'Heading1'})
+        if style=='bullet':
+            ET.SubElement(props,tag('ind'),{tag('left'):'180',tag('hanging'):'140'})
         r=ET.SubElement(p,tag('r'));t=ET.SubElement(r,tag('t'),{'{http://www.w3.org/XML/1998/namespace}space':'preserve'});t.text=line
+        if style in ('job','subject','target'):
+            rp=ET.Element(tag('rPr'));ET.SubElement(rp,tag('b'));r.insert(0,rp)
     section=ET.SubElement(body,tag('sectPr'));ET.SubElement(section,tag('pgSz'),{tag('w'):'12240',tag('h'):'15840'})
-    ET.SubElement(section,tag('pgMar'),{tag('top'):'1080',tag('bottom'):'1080',tag('left'):'1080',tag('right'):'1080'})
+    ET.SubElement(section,tag('pgMar'),{tag('top'):'860',tag('bottom'):'860',tag('left'):'960',tag('right'):'960'})
     output=io.BytesIO()
     with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as archive:
         archive.writestr('[Content_Types].xml','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>')
         archive.writestr('_rels/.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>')
         archive.writestr('word/document.xml',ET.tostring(root,encoding='utf-8',xml_declaration=True))
         archive.writestr('word/_rels/document.xml.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>')
-        archive.writestr('word/styles.xml','<w:styles xmlns:w="'+WORD+'"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:rPr><w:b/><w:sz w:val="30"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="Heading 1"/><w:rPr><w:b/><w:sz w:val="24"/></w:rPr></w:style></w:styles>')
+        size='21' if kind=='coverLetter' else '20'
+        archive.writestr('word/styles.xml','<w:styles xmlns:w="'+WORD+'"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:color w:val="000000"/><w:sz w:val="'+size+'"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:rPr><w:b/><w:color w:val="000000"/><w:sz w:val="38"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="Heading 1"/><w:rPr><w:b/><w:color w:val="000000"/><w:sz w:val="20"/></w:rPr></w:style></w:styles>')
     return output.getvalue()
 
 

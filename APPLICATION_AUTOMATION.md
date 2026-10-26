@@ -1,5 +1,15 @@
 # Reviewed application workflow and Windows browser connection
 
+## Low-friction agent workflow
+
+Research roles into Discover within Opportunities. These research records stay separate from official jobs and application materials. The user chooses Yes or No for each card; Yes creates an Exploring role and source-based drafts, while No retains the research in Passed. Neither action submits an application.
+
+For each accepted role, start from the designated originals in Career memory, preserve factual history and contact information, and tailor the resume and letter to the live employer posting. Save polished text in Tailored materials. The user can review that text and download formatted PDF or DOCX files in one click. Downloads preserve the exact editor wording and save edits; they do not confirm source facts or authorize submission. Source/claims checks remain visible and still gate application packet approval.
+
+After the user approves the target and materials, use the local Playwright browser to prepare the application and attach the role-specific PDFs. Continue through reversible fields using previously confirmed answers. Bundle missing factual questions instead of asking repeatedly about known data. The user handles sign-in, verification, and applicant-only declarations. Present the completed form, files, and screening answers together for final authorization; verify employer confirmation before marking Applied. Review changed items if questions or files change after approval.
+
+This workflow runs during an active local agent session. A Yes in the web app prepares deterministic source-based drafts; it does not launch a background language model or attach the user's browser by itself. The agent polishes drafts and handles browser preparation during the local session without enabling additional API billing.
+
 ## What is available now
 
 Next Chapter has an Application queue that stores reviewed screening notes and exports a preparation packet for an approved role. It checks current confirmed facts, saved materials, source versions, and the role URL. Changes invalidate the review. Applied/in-progress/closed opportunities cannot export a second application packet.
@@ -46,6 +56,8 @@ Official instructions: https://github.com/microsoft/playwright-mcp
 The packet explicitly sets `submissionAuthorized: false` because approving a preparation packet cannot approve website questions that have not yet been seen. Final submission requires approval of the actual completed form in the local session. The applicant handles identity verification, CAPTCHA/MFA and legally binding attestations/signatures. Passwords and authentication codes should not be placed in exported packets or chat.
 
 ## Existing applications
+
+Version 2 preparation packets include `preparedDocuments`: target-specific PDF uploads generated from the exact saved text after the existing review checks pass. Decode each base64 payload into `.application-work/<job-id>/`, verify its SHA-256 against the packet, and inspect the PDF before attaching. These files replace the need to recreate resume attachments manually. Originals in `sourceDocuments` remain references. The packet still has `submissionAuthorized: false`.
 
 For an already-applied role, use the role-specific interview plan, debrief, materials and communications. Do not resubmit simply to test automation. The application queue prevents that action in its packet workflow.
 

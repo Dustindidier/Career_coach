@@ -6,9 +6,10 @@ Live service: https://next-chapter-uqr1.onrender.com (password protected).
 
 ## Run locally
 
-Python 3.10+, no third-party runtime dependencies:
+Python 3.10+. Install the PDF renderer, then start the app:
 
 ```sh
+python -m pip install -r requirements.txt
 python server.py
 ```
 

@@ -49,6 +49,17 @@ def validate_workspace(data):
     if not isinstance(documents, list) or not all(strings(d, ('id','kind','filename','sha256','extractedText','storagePath','mimeType','createdAt')) and d['kind'] in ('resume','coverLetter') and isinstance(d.get('approvedForDrafting'), bool) and isinstance(d.get('reviewedForApplications'), bool) for d in documents):
         return False
     preferences = p.get('searchPreferences', {})
+    discovery=p.get('discovery',[])
+    if not isinstance(discovery,list) or len(discovery)>500:
+        return False
+    for item in discovery:
+        if not strings(item,('id','company','title','sourceUrl','posting')) or item.get('decision','pending') not in ('pending','accepted','rejected'):
+            return False
+        for key in ('fitReasons','concerns'):
+            if not isinstance(item.get(key),list) or not all(isinstance(x,str) for x in item[key]):
+                return False
+        if not all(isinstance(item.get(k,''),str) for k in ('location','schedule','salary','verifiedAt','availabilityEvidence','jobId')):
+            return False
     if not isinstance(preferences, dict) or not all(isinstance(preferences.get(k, ''), str) for k in ('location', 'remote', 'compensation', 'constraints')):
         return False
     if not isinstance(preferences.get('roles', []), list) or not all(isinstance(x, str) for x in preferences.get('roles', [])):

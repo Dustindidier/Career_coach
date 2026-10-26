@@ -7,3 +7,4 @@ code{overflow-wrap:anywhere;font-size:12px}#gmail-preview{margin-top:24px}#gmail
 #material-audit .feedback{white-space:normal}#material-audit .check p{margin-bottom:8px}.story-card .pill{margin-top:4px}.check details{margin-top:10px}
 
 .check h3{overflow-wrap:anywhere}.reference-review{margin-top:12px}
+.discovery{max-width:960px;margin:0 auto 32px}.discovery-card{padding:20px 0 4px}.discovery-card h3{font-size:1.7rem;line-height:1.2;margin-bottom:10px}.discovery-card .grid{gap:24px}.discovery-card h4{margin:16px 0 8px}.discovery-card ul{padding-left:20px;line-height:1.6}.discovery button[aria-pressed="true"]{background:var(--ink,#21382e);color:white}.discovery-card>.actions{margin-top:24px}.discovery-card>.actions button{min-height:48px}

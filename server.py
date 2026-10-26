@@ -15,6 +15,7 @@ from intelligence import duplicate_check, audit_materials, rank_stories
 from career import search_plan, tailor
 from applications import preparation_packet
 from documents import metadata as document_metadata, docx as export_docx, source_candidates
+from material_exports import pdf as export_pdf
 import re
 from gmail import Gmail, start_oauth, verify_oauth, alert_links, context_hints
 from pathlib import Path
@@ -319,8 +320,11 @@ class Handler(SimpleHTTPRequestHandler):
             if self.path == '/api/documents/export':
                 if not isinstance(data.get('text'),str) or not 0<len(data['text'])<=150000:
                     raise ValueError()
-                raw=export_docx(data['text'])
-                return self.json_response(200,{'base64':base64.b64encode(raw).decode(),'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})
+                fmt=data.get('format','docx');kind=data.get('kind','resume')
+                if fmt not in ('pdf','docx') or kind not in ('resume','coverLetter'):
+                    raise ValueError()
+                raw=export_pdf(data['text'],kind) if fmt=='pdf' else export_docx(data['text'],kind)
+                return self.json_response(200,{'base64':base64.b64encode(raw).decode(),'mimeType':'application/pdf' if fmt=='pdf' else 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})
             if self.path == '/api/application-packet':
                 if not isinstance(data.get('jobId'), str):
                     raise ValueError()
