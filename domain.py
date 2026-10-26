@@ -1,6 +1,7 @@
 """Free, deterministic preparation tools. No model calls in this module."""
 import re
 import uuid
+from feedback import valid_feedback
 
 CATEGORIES = ('Experience', 'Education', 'Credential', 'Accomplishment', 'Preference', 'Skill')
 
@@ -48,6 +49,8 @@ def validate_workspace(data):
     documents = p.get('referenceDocuments', [])
     if not isinstance(documents, list) or not all(strings(d, ('id','kind','filename','sha256','extractedText','storagePath','mimeType','createdAt')) and d['kind'] in ('resume','coverLetter') and isinstance(d.get('approvedForDrafting'), bool) and isinstance(d.get('reviewedForApplications'), bool) for d in documents):
         return False
+    if not valid_feedback(p.get('researchFeedback', [])):
+        return False
     preferences = p.get('searchPreferences', {})
     discovery=p.get('discovery',[])
     if not isinstance(discovery,list) or len(discovery)>500:
@@ -58,7 +61,7 @@ def validate_workspace(data):
         for key in ('fitReasons','concerns'):
             if not isinstance(item.get(key),list) or not all(isinstance(x,str) for x in item[key]):
                 return False
-        if not all(isinstance(item.get(k,''),str) for k in ('location','schedule','salary','verifiedAt','availabilityEvidence','jobId')):
+        if not all(isinstance(item.get(k,''),str) for k in ('location','schedule','salary','verifiedAt','availabilityEvidence','jobId','decisionReason','decidedAt')):
             return False
     if not isinstance(preferences, dict) or not all(isinstance(preferences.get(k, ''), str) for k in ('location', 'remote', 'compensation', 'constraints')):
         return False

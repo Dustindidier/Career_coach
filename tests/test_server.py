@@ -37,6 +37,19 @@ class WorkspaceTests(unittest.TestCase):
         cls.tmp.cleanup()
         cls.storage_patch.stop()
 
+    def test_research_context_and_search_plan_use_current_snapshot(self):
+        data, etag = self.get()
+        data['profile']['researchFeedback'] = [dict(id='test-context', text='Prioritize progression', source='My feedback', sourceType='user', status='active', createdAt='2026-01-01', reviewedAt='2026-01-01')]
+        with self.put(data, etag) as response:
+            self.assertEqual(response.status, 204)
+        with urllib.request.urlopen(self.url + '/api/research-context') as response:
+            context = json.load(response)
+        self.assertEqual(context['activeFeedback'][0]['id'], 'test-context')
+        with urllib.request.urlopen(self.url + '/api/search-plan') as response:
+            plan = json.load(response)
+        self.assertEqual(plan['researchContext']['revision'], context['revision'])
+        self.assertEqual(plan['researchContext']['activeFeedback'], context['activeFeedback'])
+
     def get(self):
         with urllib.request.urlopen(self.url+'/api/workspace') as r:
             return json.load(r), r.headers['ETag']

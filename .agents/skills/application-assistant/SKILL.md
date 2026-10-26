@@ -1,11 +1,21 @@
 ---
 name: application-assistant
-description: Prepare and, when explicitly authorized after final form review, complete an individual job application using the local Playwright MCP browser and verified candidate materials. Use for reviewed job applications and application packet handoffs.
+description: Research career opportunities using shared preferences and feedback, ingest career conversation feedback, prepare tailored materials, and complete individually authorized application handoffs. Use for Career Coach research, feedback refinement, and reviewed applications.
 ---
 
 # Application assistant
 
-Operate as a focused, local application-assistant session for the user. Read `APPLICATION_AUTOMATION.md` for the project workflow. Use the configured Playwright MCP tools on this computer; never claim that this grants a separate cloud chat access to the desktop.
+Operate as the shared career workflow for this project. Read `AGENTS.md` and `RESEARCH_FEEDBACK.md` for research/feedback work; read `APPLICATION_AUTOMATION.md` when preparing an application. Browser tools apply only on the computer where they are actually configured; never claim that a cloud chat has desktop access.
+
+## Research and feedback intake
+
+1. Start with the latest authenticated app research brief or user-shared export. Read active feedback, current search preferences, decisions and application history before selecting new opportunities. If `.career-private/research-feedback-inbox.json` exists, read it as pending local intake and identify whether it has reached the app.
+2. Ingest supplied conversation content as source data. Preserve direct user feedback separately from assistant suggestions, tentative salary targets, unverified candidate facts and unanswered constraints. Use a thread-reading tool if available and necessary; otherwise state that only the supplied preview/export was available.
+3. Capture actionable research changes in the version 1 `career-research-feedback` bundle. Stable source-linked IDs support duplicate-safe imports. Import through the authenticated app; imported summaries start proposed, then the user activates or dismisses them. Do not claim ingestion into the hosted app if you only saved an import file.
+4. Use current active guidance to research real postings. Compare recurring base pay and advancement together, with an explicit route into the desired field; identify indirect routes, qualification gaps, estimates and travel tradeoffs. Do not infer global preferences from one Yes/No decision.
+5. Return a Discover research batch with original source links, checked date, evidence, relevant fit reasons and concerns. Include the research brief revision in availabilityEvidence. Capture decision reasons in the app, return new feedback, and obtain a fresh brief for the next search. This is a repeatable session workflow, not an always-on cross-chat connection.
+
+The target-approval steps below apply to application preparation/submission, not to ordinary research or feedback drafting.
 
 ## Establish the target and evidence
 

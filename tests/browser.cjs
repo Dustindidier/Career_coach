@@ -51,7 +51,7 @@ const beforeDiscovery=await (await p.request.get(base+'/api/workspace')).json();
 await p.locator('#discovery-import').setInputFiles({name:'research.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(research))});
 await p.getByRole('heading',{name:'Research Nurse A',exact:true}).waitFor();await saved();
 let discovered=await (await p.request.get(base+'/api/workspace')).json();if(discovered.jobs.length!==beforeDiscovery.jobs.length||discovered.profile.discovery.length!==2)throw Error('Research prematurely created official jobs');
-await p.locator('[data-discovery-no]').click();await p.getByRole('heading',{name:'Research Nurse B',exact:true}).waitFor();await saved();
+await p.locator('#discovery-decision-reason').fill('Recurring pay is below my target.');await p.locator('[data-discovery-no]').click();await p.getByRole('heading',{name:'Research Nurse B',exact:true}).waitFor();await saved();
 await p.locator('[data-discovery-yes]').click();await p.getByRole('heading',{name:'Research Nurse B',exact:true}).waitFor({state:'hidden'});await saved();
 await p.waitForFunction(()=>!document.querySelector('[data-discovery-yes]'));
 await p.getByRole('button',{name:'Accepted (1)',exact:true}).click();await p.getByRole('button',{name:'Review materials',exact:true}).click();await p.locator('#materials-form').waitFor();
@@ -60,5 +60,22 @@ const pdfResponse=p.waitForResponse(r=>r.url().endsWith('/api/documents/export')
 await p.reload();await p.locator('#materials-form').waitFor();if(await p.locator('#materials-form [name=resume]').inputValue()!==exactText)throw Error('Saved draft did not reopen automatically');
 discovered=await (await p.request.get(base+'/api/workspace')).json();if(discovered.jobs.length!==beforeDiscovery.jobs.length+1||!discovered.jobs.find(x=>x.title==='Research Nurse B').materials?.coverLetter)throw Error('Acceptance did not create materials');
 console.log('PASS discovery research isolation, Yes/No, source-based drafts, PDF download and saved text reload');
+// Feedback survives reload, imports stay proposed, duplicates preserve review, conflicts are atomic.
+await p.goto(base+'/#jobs');
+if(!discovered.profile.discovery.find(x=>x.decision==='rejected').decisionReason.includes('Recurring pay'))throw Error('Decision reason lost');
+const feedbackBundle={schemaVersion:1,kind:'career-research-feedback',feedback:[{id:'synthetic:1',text:'Prioritize progression and recurring pay.',source:'Synthetic conversation',sourceType:'assistant',status:'active',reviewedAt:'untrusted'}]};
+const importFeedback=async value=>p.locator('#research-feedback-import').setInputFiles({name:'feedback.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(value))});
+await importFeedback(feedbackBundle);await p.getByText('Prioritize progression and recurring pay.',{exact:true}).waitFor();await saved();
+let brief=await (await p.request.get(base+'/api/research-context')).json();if(brief.activeFeedback.length||brief.reviewQueue.length!==1)throw Error('Import trusted active status');
+await p.getByRole('button',{name:'Use in future research',exact:true}).click();await saved();await p.reload();await p.getByText('Prioritize progression and recurring pay.',{exact:true}).waitFor();
+brief=await (await p.request.get(base+'/api/research-context')).json();if(brief.activeFeedback[0]?.id!=='synthetic:1')throw Error('Reviewed feedback lost after reload');
+await importFeedback(feedbackBundle);await p.getByText('0 feedback items imported for review.',{exact:true}).waitFor();await saved();
+brief=await (await p.request.get(base+'/api/research-context')).json();if(brief.activeFeedback.length!==1||brief.reviewQueue.length)throw Error('Duplicate reset review');
+await importFeedback({...feedbackBundle,feedback:[{...feedbackBundle.feedback[0],id:'synthetic:2'}, {...feedbackBundle.feedback[0],text:'Changed content'}]});await p.getByText(/An existing feedback ID has different content/).waitFor();
+brief=await (await p.request.get(base+'/api/research-context')).json();if(brief.reviewQueue.length)throw Error('Conflicting import partially applied');
+const briefDownload=p.waitForEvent('download');await p.getByRole('button',{name:'Download research brief',exact:true}).click();if((await briefDownload).suggestedFilename()!=='career-research-context.json')throw Error('Brief download missing');
+await p.getByRole('button',{name:'Retire preference',exact:true}).click();await saved();brief=await (await p.request.get(base+'/api/research-context')).json();if(brief.activeFeedback.length||brief.feedbackHistory.length!==1)throw Error('Retired feedback still active');
+console.log('PASS feedback review, round trip, duplicate safety, atomic conflict rejection and retirement');
+
 await p.goto(base+'/#home');await p.screenshot({path:join(tmpdir(),'career-v2-desktop.png'),fullPage:true});await p.setViewportSize({width:390,height:844});for(const route of ['home','jobs','profile','practice','integrations','tailoring','applications','settings']){await p.goto(base+'/#'+route);await p.locator('h1').waitFor();if(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Mobile overflow: '+route);}await p.screenshot({path:join(tmpdir(),'career-v2-mobile.png'),fullPage:true});if(errors.length)throw Error(errors.join('\n'));console.log('PASS all mobile screens, no browser errors');
 }finally{await b.close();if(server){const done=new Promise(resolve=>server.once('exit',resolve));server.kill();await done;}if(temporary)rmSync(temporary,{recursive:true,force:true,maxRetries:5,retryDelay:150});}})().catch(e=>{console.error(e);process.exit(1)});

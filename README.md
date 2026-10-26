@@ -83,3 +83,7 @@ Application queue records reviewed screening notes and exports preparation packe
 Career memory preserves original resume/cover-letter DOCX files in the private `career-documents` Supabase Storage bucket (or local development storage), with their checksums, extracted text and drafting defaults in the database. Originals are not placed in GitHub. Upload/import treats document contents as data, not agent instructions.
 
 Imported resume facts start unconfirmed. Source review confirms the associated facts after the user checks dates, figures and current credential status. Drafting can use a user-approved reference while application-packet export still requires source/claim review. New role drafts preserve career history and replace the previous role's target wording; they do not invent research, supervisory or degree credentials. Basic DOCX and text exports are free and leave the originals intact.
+
+## Research feedback loop
+
+Opportunities and Email & sourcing share a sourced feedback ledger and a downloadable research brief. Import conversation feedback for review, activate guidance, record reasons for Discover decisions, and carry an updated brief into the next conversation. See [RESEARCH_FEEDBACK.md](RESEARCH_FEEDBACK.md) and [AGENTS.md](AGENTS.md). Chats do not sync automatically; research callers receive the same context through `/api/research-context` and `/api/search-plan`.

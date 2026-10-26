@@ -9,3 +9,7 @@ node_modules/
 .application-work/
 application-packets/
 .playwright-mcp/
+
+# Private conversation intake and scratch files
+.career-private/
+work/

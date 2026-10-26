@@ -13,6 +13,7 @@ from domain import validate_workspace, analyze_posting, guided_coach
 from sources import fetch_source
 from intelligence import duplicate_check, audit_materials, rank_stories
 from career import search_plan, tailor
+from feedback import research_context
 from applications import preparation_packet
 from documents import metadata as document_metadata, docx as export_docx, source_candidates
 from material_exports import pdf as export_pdf
@@ -246,10 +247,18 @@ class Handler(SimpleHTTPRequestHandler):
                     'email': tokens.get('email', '') if tokens else '', 'redirectUri': GMAIL_REDIRECT_URI})
             except Exception:
                 return self.json_response(200, {'configured': configured, 'connected': False, 'storageError': True, 'redirectUri': GMAIL_REDIRECT_URI})
+        if self.path == '/api/research-context':
+            try:
+                workspace, revision = read_snapshot()
+                return self.json_response(200, research_context(workspace, revision))
+            except Exception:
+                return self.send_error(503, 'Research context unavailable')
         if self.path == '/api/search-plan':
             try:
-                workspace, _ = read_snapshot()
-                return self.json_response(200, search_plan(workspace['profile'].get('searchPreferences', {})))
+                workspace, revision = read_snapshot()
+                plan = search_plan(workspace['profile'].get('searchPreferences', {}))
+                plan['researchContext'] = research_context(workspace, revision)
+                return self.json_response(200, plan)
             except Exception:
                 return self.send_error(503, 'Search preferences unavailable')
         if self.path == '/api/capabilities':
