@@ -48,3 +48,23 @@ The packet explicitly sets `submissionAuthorized: false` because approving a pre
 ## Existing applications
 
 For an already-applied role, use the role-specific interview plan, debrief, materials and communications. Do not resubmit simply to test automation. The application queue prevents that action in its packet workflow.
+
+## Link the local CLI to this project
+
+If Git is missing on Windows, install Git for Windows (`winget install --id Git.Git --exact --source winget`) and reopen the terminal. Then clone the repository and start Codex from its directory:
+
+```powershell
+git clone https://github.com/Dustindidier/Career_coach.git "$env:USERPROFILE\Career_coach"
+Set-Location "$env:USERPROFILE\Career_coach"
+codex.cmd
+```
+
+If the checkout already exists, use `Set-Location` and `git pull --ff-only` instead of cloning over it. The hosted app remains the shared workspace; the local CLI/browser performs site actions. No local Python server is needed for this browser workflow.
+
+The repository includes `.agents/skills/application-assistant/SKILL.md`. Start a focused session by entering this inside Codex:
+
+```text
+Use $application-assistant. Read APPLICATION_AUTOMATION.md, then open the hosted Application queue with Playwright. Let me sign in. Help me prepare the next new role I approve, using its reviewed materials and screening answers. Skip roles already applied to. Show the completed site form and any missing answers before submission.
+```
+
+For a downloaded preparation packet, save it in `.application-work/approved-application.json` (create the folder if needed) and tell the local agent to read that file. These working files are Git-ignored. The skill is a reusable workflow for a local Codex session, not an always-on daemon or a browser connection to this cloud chat.
