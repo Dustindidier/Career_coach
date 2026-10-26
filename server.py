@@ -13,6 +13,7 @@ from domain import validate_workspace, analyze_posting, guided_coach
 from sources import fetch_source
 from intelligence import duplicate_check, audit_materials, rank_stories
 from career import search_plan, tailor
+from applications import preparation_packet
 from gmail import Gmail, start_oauth, verify_oauth, alert_links, context_hints
 from pathlib import Path
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -256,15 +257,26 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if not self.same_origin():
             return self.send_error(403)
-        if self.path not in ('/api/analyze', '/api/coach', '/api/source-preview', '/api/tailor', '/api/gmail/connect', '/api/gmail/preview', '/api/gmail/draft', '/api/gmail/disconnect', '/api/duplicate-check', '/api/material-audit'):
+        if self.path not in ('/api/analyze', '/api/coach', '/api/source-preview', '/api/tailor', '/api/gmail/connect', '/api/gmail/preview', '/api/gmail/draft', '/api/gmail/disconnect', '/api/duplicate-check', '/api/material-audit', '/api/application-packet'):
             return self.send_error(404)
         try:
             data = self.read_json()
             if not isinstance(data, dict):
                 raise ValueError()
+            if self.path == '/api/application-packet':
+                if not isinstance(data.get('jobId'), str):
+                    raise ValueError()
+                try:
+                    workspace, _ = read_snapshot()
+                except Exception:
+                    return self.send_error(503, 'Workspace unavailable')
+                try:
+                    return self.json_response(200, preparation_packet(workspace, data['jobId']))
+                except ValueError as error:
+                    return self.json_response(400, {'error': str(error)})
             if self.path.startswith('/api/gmail/'):
                 return self.gmail_action(data)
-            if self.path in ('/api/duplicate-check', '/api/material-audit'):
+            if self.path in ('/api/duplicate-check', '/api/material-audit', '/api/application-packet'):
                 try:
                     workspace, _ = read_snapshot()
                 except Exception:

@@ -30,6 +30,16 @@ def validate_workspace(data):
         if not isinstance(reqs, list) or not all(strings(r, ('id', 'text', 'kind', 'evidenceId', 'note')) and isinstance(r.get('reviewed'), bool) for r in reqs):
             return False
     for job in data['jobs']:
+        preparation = job.get('preparation')
+        if preparation is not None:
+            if not isinstance(preparation, dict) or not isinstance(preparation.get('sourceNote', ''), str) or preparation.get('status') not in ('posting_verified', 'provisional') or not isinstance(preparation.get('scenarioCheckpoint', ''), str):
+                return False
+            questions = preparation.get('questions', {})
+            if not isinstance(questions, dict) or not all(isinstance(v, list) and all(isinstance(q, str) for q in v) for v in questions.values()):
+                return False
+            for key in ('focusAreas', 'fitChecks', 'nextActions'):
+                if not isinstance(preparation.get(key, []), list) or not all(isinstance(x, str) for x in preparation.get(key, [])):
+                    return False
         messages = job.get('communications', [])
         if not isinstance(messages, list) or not all(strings(m, ('id', 'subject', 'from', 'body', 'receivedAt')) for m in messages):
             return False
@@ -43,6 +53,9 @@ def validate_workspace(data):
     if not isinstance(p.get('gmailQuery', ''), str) or not isinstance(p.get('gmailAutoCheck', False), bool):
         return False
     for job in data['jobs']:
+        workflow = job.get('applicationWorkflow', {})
+        if not isinstance(workflow, dict) or not isinstance(workflow.get('reviewed', False), bool) or not all(isinstance(workflow.get(k, ''), str) for k in ('screeningNotes', 'reviewDigest', 'reviewedAt')):
+            return False
         materials = job.get('materials', {})
         if not isinstance(materials, dict) or not all(isinstance(materials.get(k, ''), str) for k in ('resume', 'coverLetter')):
             return False
@@ -118,9 +131,16 @@ def guided_coach(payload):
             feedback.append('Use your real constraints and confirmed targets. Ask about the range and total package; no market salary is inferred here.')
         else:
             feedback.append('Connect your answer to the role, and separate transferable experience from areas you still need to learn.')
+    prep = job.get('preparation', {})
+    custom = prep.get('questions', {}).get(mode, []) if isinstance(prep, dict) else []
+    custom = [q for q in custom if isinstance(q, str) and q.strip()]
+    if custom:
+        sequence = custom[:12]
+        if answer and mode == 'safety':
+            feedback[-1] = prep.get('scenarioCheckpoint', 'Use the role’s actual scope, procedures, and escalation channels. This is a rehearsal checkpoint, not a verification of professional competence.')
     next_question = sequence[turn % len(sequence)]
     if focus and mode in ('recruiter', 'behavioral') and turn == 1:
         next_question = f'The posting says: “{focus[:600]}”. What evidence from your experience would you discuss, and what would you need to learn?'
-    elif answer and mode == 'behavioral' and turn == 2 and len(answer.split()) < 25:
+    elif not custom and answer and mode == 'behavioral' and turn == 2 and len(answer.split()) < 25:
         next_question = 'Can you make that more concrete? Describe one action you personally took and what happened next.'
-    return {'engine': 'guided', 'question': next_question, 'feedback': feedback, 'label': 'Free guided coach · rules and prompts, not AI', 'complete': turn >= len(sequence)}
+    return {'engine': 'guided', 'question': next_question, 'feedback': feedback, 'label': ('Role-specific guided practice · ' + ('posting verification pending' if prep.get('status') != 'posting_verified' else 'reviewed role plan')) if custom else 'Free guided coach · rules and prompts, not AI', 'complete': turn >= len(sequence)}

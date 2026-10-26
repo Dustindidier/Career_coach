@@ -70,3 +70,9 @@ The free sourcing workflow now includes canonical URL deduplication, possible-du
 Stories have an explicit factual-review checkbox. Editing story details or confirmed facts clears their confirmation until reviewed again. Existing stories remain intact and need confirmation before supplying facts/figures to tailoring or AI practice.
 
 Before exporting tailored materials, run **Check claims & placeholders**. This flags unfilled fields, figures/dates absent from approved sources, unsupported credentials (unfinished coursework is not a degree), and changes in source versions. It is a heuristic aid, not full fact verification or a licensure check. You can still export an explicitly reviewed working draft with warnings. Story suggestions use explained keyword overlap and no AI service.
+
+## Role-specific preparation and application handoff
+
+Opportunities can carry a reviewed preparation plan: source status, role-specific question banks, focus areas, fit checks and next steps. Guided practice uses that selected role's questions and labels provisional plans. Closing an opportunity preserves history; the dashboard defaults to an open role on reload.
+
+Application queue records reviewed screening notes and exports preparation packets after evidence and source-version checks. These are not automated submissions. Existing applied/in-progress/closed jobs are protected from duplicate packet creation. See [APPLICATION_AUTOMATION.md](APPLICATION_AUTOMATION.md) for the free Windows/local-browser connection route and its remaining setup requirements. No personal browser connection is created by the cloud app.
