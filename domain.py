@@ -86,6 +86,13 @@ def validate_workspace(data):
         return False
     if not valid_feedback(p.get('researchFeedback', [])):
         return False
+    daily = p.get('dailyResearch', {})
+    if not isinstance(daily, dict) or not isinstance(daily.get('enabled', False), bool):
+        return False
+    if not all(isinstance(daily.get(k, ''), str) and len(daily.get(k, '')) <= 4000 for k in ('automationId','scheduleLabel','timeZone','nextRunAt','lastRunId','lastRunAt','lastStatus','lastNote')):
+        return False
+    if not all(type(daily.get(k, 0)) is int and 0 <= daily.get(k, 0) <= 1000 for k in ('lastAdded','lastSkipped')):
+        return False
     preferences = p.get('searchPreferences', {})
     discovery=p.get('discovery',[])
     if not isinstance(discovery,list) or len(discovery)>500:

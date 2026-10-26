@@ -1,6 +1,6 @@
 # Research, feedback, and application memory
 
-The app holds shared career memory. The application-assistant skill and project AGENTS.md define how each working session uses it. ChatGPT conversations and external notes provide inputs; they are not automatically connected databases. This loop runs when the user or an active agent brings context back to the app. It uses no new model service, paid API, scheduler, or background agent.
+The app holds shared career memory. The application-assistant skill and project AGENTS.md define how each working session uses it. ChatGPT conversations and external notes provide inputs; they are not automatically connected databases. Conversation intake runs when the user or an active agent brings context back to the app. An explicitly configured cloud task can also perform scheduled opportunity research using saved memory; see DAILY_RESEARCH.md. This does not automatically read other ChatGPT project conversations or enable a new paid model API.
 
 ## One repeatable loop
 

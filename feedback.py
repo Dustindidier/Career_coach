@@ -35,6 +35,7 @@ def research_context(workspace, revision):
         'schemaVersion': 1, 'kind': 'career-research-context', 'revision': revision,
         'generatedAt': datetime.now(timezone.utc).isoformat(),
         'preferences': profile.get('searchPreferences', {}),
+        'dailyResearch': profile.get('dailyResearch', {}),
         'activeFeedback': [r for r in ledger if r['status'] == 'active'],
         'reviewQueue': [r for r in ledger if r['status'] == 'proposed'],
         'feedbackHistory': [r for r in ledger if r['status'] in ('superseded', 'dismissed')],
