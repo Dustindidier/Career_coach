@@ -6,6 +6,22 @@ from feedback import valid_feedback
 CATEGORIES = ('Experience', 'Education', 'Credential', 'Accomplishment', 'Preference', 'Skill')
 
 
+def valid_application_deadline(value):
+    from datetime import date
+    if not isinstance(value, dict) or value.get('status') not in ('published', 'anticipated', 'rolling', 'not_published', 'unverified'):
+        return False
+    if not all(isinstance(value.get(k), str) and len(value[k]) <= limit for k, limit in [('date',10),('sourceUrl',3000),('checkedAt',100),('note',4000),('timeZone',200)]):
+        return False
+    if value['sourceUrl'] and not value['sourceUrl'].startswith(('https://','http://')):
+        return False
+    if value['status'] in ('published','anticipated'):
+        try:
+            return bool(re.fullmatch(r'\d{4}-\d{2}-\d{2}',value['date'])) and bool(date.fromisoformat(value['date'])) and bool(value['sourceUrl']) and bool(value['checkedAt'])
+        except ValueError:
+            return False
+    return value['date'] == ''
+
+
 def valid_career_path(path):
     if not isinstance(path, dict) or path.get('schemaVersion') != 1:
         return False
@@ -107,6 +123,8 @@ def validate_workspace(data):
         if last is not None and (not strings(last, ('status', 'checkedAt')) or not isinstance(last.get('warnings', []), list) or not all(isinstance(w, str) for w in last.get('warnings', []))):
             return False
     for record in data['jobs'] + discovery:
+        if 'applicationDeadline' in record and not valid_application_deadline(record['applicationDeadline']):
+            return False
         if 'careerPath' in record and not valid_career_path(record['careerPath']):
             return False
     for record in data['jobs'] + p.get('inbox', []):

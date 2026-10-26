@@ -19,6 +19,10 @@ Operate as the shared career workflow for this project. Read `AGENTS.md` and `RE
 
 For each researched or tracked role, explain fit outside bedside and build a conditional career ladder. Include cumulative years from entering the role, estimated annual base in current dollars, source quality/date, experience to acquire, and a concrete readiness gate for each next move. Distinguish employer-published entry pay from broader planning estimates. Identify direct trial/pharma/biotech paths versus device, hospital-quality or education paths requiring another transition. Do not count clinical tenure as research tenure, imply automatic promotions, or confuse research patient care with a fully non-patient-facing role. Preserve existing application stages and materials when adding plans. Save source-linked user priorities and carry careerPath data when promoting Discover records.
 
+## Application deadlines
+
+Include `applicationDeadline` with each research record: status (`published`, `anticipated`, `rolling`, `not_published`, `unverified`), ISO date only for published/anticipated dates, sourceUrl, checkedAt, note and timeZone. Distinguish an anticipated application-window close from a firm deadline. Capture an exact cutoff/timezone only when published; never infer from posting age, employment-form dates or lack of an Apply page. Use not_published only after reviewing a readable listing; inaccessible sources remain unverified. Recheck imminent dates before action; a date passing never automatically changes the application stage.
+
 ## Relevance and freshness checks
 
 - Current saved preferences take precedence over an older assistant-reported target. Preserve the old assertion as superseded with provenance; ask only when current user guidance itself conflicts or remains unclear.

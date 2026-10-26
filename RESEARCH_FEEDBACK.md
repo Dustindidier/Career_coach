@@ -50,3 +50,7 @@ Deduplicate new batches against all prior Discover decisions and tracked roles, 
 ## Projected career ladders
 
 Tracked opportunities and researched Discover records can carry a structured `careerPath`. The ladder distinguishes fit outside bedside, entry qualifications, direct versus indirect industry bridges, cumulative timelines, salary evidence, experience milestones and readiness gates. Future salaries are current-dollar base-pay estimates, not employer commitments; bonuses and equity stay separate. Discover promotion preserves the ladder. Adding a plan does not change application stages or materials. New research should include a ladder and refresh salary references rather than assuming an old projection remains current.
+
+## Application deadlines
+
+Every opportunity displays deadline status in Discover, My opportunities and the Application queue. Record a source and checked date for researched deadlines. Keep anticipated application windows separate from published dates; show not published only when a readable source was checked and unverified when it was not. Rolling requires an explicit statement. Date-only countdowns use the viewer's calendar day and do not imply a cutoff hour/timezone. A listed date passing does not mark a role Closed. Discover acceptance preserves deadline evidence, and research briefs carry tracked-role deadlines.

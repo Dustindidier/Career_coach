@@ -39,7 +39,7 @@ def research_context(workspace, revision):
         'reviewQueue': [r for r in ledger if r['status'] == 'proposed'],
         'feedbackHistory': [r for r in ledger if r['status'] in ('superseded', 'dismissed')],
         'decisions': decisions,
-        'trackedRoles': [{k: j.get(k, '') for k in ('id', 'company', 'title', 'sourceUrl', 'stage')}
+        'trackedRoles': [{k: j.get(k, '') for k in ('id', 'company', 'title', 'sourceUrl', 'stage', 'applicationDeadline')}
                          for j in workspace.get('jobs', [])],
         'careerPathSummaries': [{k: record.get(k, '') for k in ('id', 'company', 'title')} |
             {k: record['careerPath'].get(k, '') for k in ('summary', 'industryBridge', 'updatedAt')}
@@ -52,5 +52,6 @@ def research_context(workspace, revision):
             'Explain pay, advancement path, realistic requirements, travel and schedule for each recommendation; verify the original posting and distinguish estimates from published base pay.',
             'Include a conditional career ladder with cumulative timelines from entry, base-pay planning ranges, experience milestones, and missing bridges into target industries. Separate leaving inpatient bedside from eliminating patient care. Do not promise promotions or treat nursing tenure as industry tenure.',
             'Return new user feedback as a career-research-feedback JSON bundle for review; never mark assistant inferences as user-confirmed.',
+            'Show an application deadline for every role: employer-published date, explicitly anticipated date, rolling only if stated, no date published in the reviewed source, or not verified. Record source and checked time. Never infer a deadline from posting age, form employment dates, or a missing page; a past listed date does not prove closure.',
             'Do not resubmit tracked applications. This context authorizes research, not job applications or messages.'
         ]}
