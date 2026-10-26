@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 WORKDIR /app
-COPY server.py domain.py sources.py gmail.py career.py intelligence.py applications.py documents.py material_exports.py ./
+COPY server.py domain.py feedback.py sources.py gmail.py career.py intelligence.py applications.py documents.py material_exports.py ./
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY static ./static
