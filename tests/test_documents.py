@@ -50,4 +50,12 @@ class DocumentTests(unittest.TestCase):
         self.assertEqual(result['baseSources'][0]['id'],record['id'])
         self.assertTrue(any(i['kind']=='Source resume needs review' for i in audit_materials(w,w['jobs'][0],result['resume'])['issues']))
 
+    def test_unselected_old_resume_does_not_supply_or_block_current_evidence(self):
+        old=metadata(docx('OLD RESUME\nGenerated 99% improvements'),'old.docx','resume')
+        current=metadata(docx('CURRENT RESUME\nRegistered nurse'),'current.docx','resume');current['reviewedForApplications']=True
+        w={'profile':{'entries':[],'referenceDocuments':[old,current],'baseResumeId':current['id']},'stories':[]}
+        result=audit_materials(w,{},'Generated 99% improvements')
+        self.assertTrue(any(i['detail']=='99%' for i in result['issues']))
+        self.assertFalse(any(i['kind']=='Source resume needs review' for i in result['issues']))
+
 if __name__=='__main__':unittest.main()

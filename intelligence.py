@@ -88,7 +88,7 @@ def rank_stories(stories, question, focus=''):
 def source_digest(workspace, job):
     records={'facts':[e for e in workspace['profile'].get('entries',[]) if e.get('confirmed') and e.get('category')!='Preference'],
              'stories':[s for s in workspace['stories'] if s.get('confirmed')],
-             'references':[[d['id'],d['sha256'],d.get('reviewedForApplications',False)] for d in workspace['profile'].get('referenceDocuments',[]) if d.get('approvedForDrafting')],
+             'references':[[d['id'],d['sha256'],d.get('reviewedForApplications',False)] for d in workspace['profile'].get('referenceDocuments',[]) if d.get('approvedForDrafting') and d['id'] in (workspace['profile'].get('baseResumeId'),workspace['profile'].get('baseCoverLetterId'))],
              'job':{k:job.get(k) for k in ('id','company','title','requirements','posting','sourceUrl')}}
     return hashlib.sha256(json.dumps(records,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
@@ -118,7 +118,7 @@ def positive_credentials(text):
 def audit_materials(workspace, job, text, digest=''):
     facts=[e['text'] for e in workspace['profile'].get('entries',[]) if e.get('confirmed') and e.get('category')!='Preference']
     stories=['\n'.join(s.get(k,'') for k in ('situation','action','outcome')) for s in workspace['stories'] if s.get('confirmed')]
-    documents=[d for d in workspace['profile'].get('referenceDocuments',[]) if d.get('kind')=='resume' and d.get('approvedForDrafting')]
+    documents=[d for d in workspace['profile'].get('referenceDocuments',[]) if d.get('kind')=='resume' and d.get('approvedForDrafting') and d['id']==workspace['profile'].get('baseResumeId')]
     sources=facts+stories+[d['extractedText'] for d in documents]
     approved_numbers=set().union(*(numbers(s) for s in sources)) if sources else set()
     approved_credentials=set().union(*(positive_credentials(s) for s in sources)) if sources else set()
