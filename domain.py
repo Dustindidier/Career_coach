@@ -86,6 +86,13 @@ def validate_workspace(data):
         return False
     if not valid_feedback(p.get('researchFeedback', [])):
         return False
+    match = p.get('matchPreferences', {})
+    if not isinstance(match, dict):return False
+    weights = match.get('weights')
+    if weights is not None:
+        keys = {'pay','advancement','interest','background','practical'}
+        if not isinstance(weights, dict) or set(weights) != keys or not all(type(v) is int and 0 <= v <= 5 for v in weights.values()) or not any(weights.values()):
+            return False
     daily = p.get('dailyResearch', {})
     if not isinstance(daily, dict) or not isinstance(daily.get('enabled', False), bool):
         return False
@@ -129,6 +136,11 @@ def validate_workspace(data):
             return False
         if last is not None and (not strings(last, ('status', 'checkedAt')) or not isinstance(last.get('warnings', []), list) or not all(isinstance(w, str) for w in last.get('warnings', []))):
             return False
+    for record in data['jobs'] + discovery + p.get('inbox', []):
+        rating = record.get('interestRating')
+        if rating is not None:
+            if not isinstance(rating, dict) or not (rating.get('value') is None or type(rating.get('value')) is int and rating['value'] in (0,25,50,75,100)) or not strings(rating, ('note','updatedAt')) or len(rating['note']) > 2000 or len(rating['updatedAt']) > 100:
+                return False
     for record in data['jobs'] + discovery:
         if 'applicationDeadline' in record and not valid_application_deadline(record['applicationDeadline']):
             return False

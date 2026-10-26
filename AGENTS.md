@@ -14,7 +14,7 @@ Use active feedback and current search preferences together. Keep proposed summa
 
 1. Read current preferences, active feedback, pending questions, role decisions and tracked application stages.
 2. Research against the user's actual priorities. Verify original employer postings; show recurring base pay separately from estimates, commission and sign-on payments. Explain the route to the desired career and any additional transition required. Identify required versus preferred experience and unresolved travel/schedule constraints.
-3. Return researched roles using the existing Discover batch format. In availabilityEvidence, record the date/source checked and research-brief revision used. Explain how the recommendation addresses relevant feedback; don't invent a fit score.
+3. Return researched roles using the existing Discover batch format. In availabilityEvidence, record the date/source checked and research-brief revision used. Explain how the recommendation addresses relevant feedback; use the match meter’s disclosed rubric rather than inventing an unexplained fit score.
 4. Capture the user's reason for pursuing/passing. Return newly stated preferences or conversation summaries as a version 1 feedback bundle described in RESEARCH_FEEDBACK.md. Preserve exact user quotes where possible; label assistant inferences. Never treat the assistant's earlier recommendation as the user's approval.
 5. Import feedback through the authenticated app and activate reviewed guidance. Retire obsolete guidance explicitly; don't silently overwrite its history. Export a fresh brief for the next session. Report whether a change is saved in the app, only prepared for import, or only local.
 

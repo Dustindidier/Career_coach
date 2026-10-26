@@ -14,7 +14,7 @@ python research_sync.py read
 
 If the hosted hostname is unavailable in an otherwise authorized managed environment, an explicit `--render-service-id` can run the same app server on loopback using its configured shared storage. This requires already-configured Render access. Server credentials remain inside the app; the client uses normal user authentication and revision-checked saves. Never print or persist secrets, bypass network policy, or replace this with administrative SQL writes. Do not enable new billing or services.
 
-Read `.career-private/daily-research-brief.json` and `.career-private/daily-research-workspace.json`. The latter contains private data. Do not send the entire workspace to job websites. Use current preferences, active feedback, reviewed facts and all existing jobs/Discover decisions. Proposed assistant suggestions are not facts.
+Read `.career-private/daily-research-brief.json` and `.career-private/daily-research-workspace.json`. The latter contains private data. Do not send the entire workspace to job websites. Use current preferences, active feedback, reviewed facts, explicit interest ratings, match priorities and all existing jobs/Discover decisions. Proposed assistant suggestions are not facts.
 
 ## Research and import
 

@@ -1,0 +1,39 @@
+/* Clickable assessment UI. All evidence text is escaped; scores are computed, never saved. */
+function matchRecord(record,kind='job'){
+  if(kind==='discovery'||kind==='inbox')return record;
+  const research=(state.profile.discovery||[]).find(r=>r.id===record.discoveryId||r.jobId===record.id);
+  return {...research,...record,salary:record.salary||research?.salary||'',schedule:record.schedule||research?.schedule||'',location:record.location||research?.location||'',concerns:record.concerns||research?.concerns||[],interestRating:record.interestRating||research?.interestRating};
+}
+function matchBadge(record,kind='job'){
+  const a=CareerMatch.assess(matchRecord(record,kind),state.profile);
+  const label=a.cap<100?`${a.cap}% max`:a.low===a.high?`${a.low}%`:`${a.low}–${a.high}%`;
+  return `<button type="button" class="match-badge ${a.cap<100?'match-conflict':a.assessed===0?'match-unknown':''}" data-match-id="${esc(record.id)}" data-match-kind="${kind}" aria-label="Open career match for ${esc(record.title)}"><span class="match-heading">Career match <strong>${label}</strong></span><span class="match-track" aria-hidden="true"><i style="width:${a.high}%" class="match-potential"></i><i style="width:${a.low}%"></i></span><span class="match-caption">${a.cap<100?'Constraint conflict':a.assessed===0?'More information needed':'Estimated fit'} · view breakdown ↗</span></button>`;
+}
+function findMatchRecord(id,kind){return (kind==='discovery'?state.profile.discovery:kind==='inbox'?state.profile.inbox:state.jobs)?.find(r=>r.id===id);}
+function openMatchDialog(id,kind){
+  const record=findMatchRecord(id,kind);if(!record)return;
+  const enriched=matchRecord(record,kind),a=CareerMatch.assess(enriched,state.profile),d=document.querySelector('#career-match-dialog');
+  const score=a.cap<100?`At most ${a.cap}%`:a.low===a.high?`${a.low}%`:`${a.low}–${a.high}%`;
+  const interest=enriched.interestRating||{};
+  const options=[['','Not rated — use goal alignment'],['0','Not interested'],['25','Slight interest'],['50','Moderate interest'],['75','High interest'],['100','Very high interest']];
+  d.innerHTML=`<div class="row spread"><div><div class="eyebrow">CAREER MATCH BREAKDOWN</div><h2 id="career-match-title">${esc(record.title)}</h2><p>${esc(record.company)}</p></div><button type="button" class="quiet" data-match-close aria-label="Close career match">Close ✕</button></div><p class="match-total"><strong>${score}</strong> estimated match</p><p class="small muted">${a.assessed} of ${a.totalFactors} weighted factors assessed. Unknowns widen the range; this is not a prediction of an offer.</p>${record.stage==='Closed'?'<p class="notice">This role is marked Closed. The match is historical, not an available recommendation.</p>':''}${a.flags.length?`<div class="notice"><strong>What needs attention</strong><ul>${a.flags.map(f=>`<li>${esc(f.text)}</li>`).join('')}</ul></div>`:''}<div class="match-factors">${Object.entries(a.components).map(([key,c])=>`<section class="match-factor"><div class="row spread"><h3>${esc(c.label)}</h3><strong>${c.status==='unknown'?'Not assessed':c.low===c.high?`${c.low}%`:`${c.low}–${c.high}%`}</strong></div><p class="small muted">${c.weight}% of total · ${esc(c.status)}</p><div class="match-track ${c.status==='unknown'?'is-unknown':''}" role="img" aria-label="${esc(c.label)}: ${c.status==='unknown'?'not assessed':c.low+' to '+c.high+' percent'}"><i style="width:${c.high}%" class="match-potential"></i><i style="width:${c.low}%"></i></div><p>${esc(c.reason)}</p>${c.evidence.length?`<details><summary>Evidence used</summary>${c.evidence.map(x=>`<p class="small pre">${esc(x)}</p>`).join('')}</details>`:''}</section>`).join('')}</div><form id="match-preferences-form"><h3>Your interest in this opportunity</h3><label>Interest rating<select name="interestValue">${options.map(([value,label])=>`<option value="${value}" ${String(interest.value??'')===value?'selected':''}>${label}</option>`).join('')}</select></label><label>What interests you or gives you pause?<textarea name="interestNote" maxlength="2000" rows="2">${esc(interest.note||'')}</textarea></label><h3>How important is each factor?</h3><p class="small muted">These priorities apply to every opportunity. Choose 0 (ignore) to 5 (most important).</p><div class="match-weights">${Object.entries(CareerMatch.LABELS).map(([key,label])=>`<label>${esc(label)}<input type="number" name="weight-${key}" min="0" max="5" step="1" required value="${a.weights[key]}"></label>`).join('')}</div><button>Save interest & priorities</button></form><details><summary>How the meter is calculated</summary><p class="small">The total is a weighted average of the five factor ranges. Default weights are pay 25%, advancement 25%, interest 15%, background 20%, and practical fit 15%. Your importance choices change those shares. An unassessed factor contributes a 0–100 range rather than being treated as a failure.</p><p class="small">Pay is compared with your current target and minimum: 70% at the minimum, 100% at the target; below the minimum scales from 0–69%. Estimated pay widens this range. Role-family advancement uses the saved career ladder. Personal interest uses your rating, or a labeled goal-alignment estimate. Background compares source-based nursing experience and reviewed evidence with specific experience requirements. Practical fit considers stated travel, work arrangement and known location concerns.</p><p class="small">Published pay entirely below your minimum, stated travel of 50% or more/frequent overnights against minimal travel, a bedside staff role against your non-bedside goal, or your Not interested rating caps the overall match at 49%. A high score in another factor cannot hide that conflict; minimum-pay and travel caps still apply when you lower their importance weight. Other written constraints may still need individual review.</p></details><p class="small muted">Saved pay preference: ${esc(a.goals.text||'Not set')}. Source context ${a.sourceDate?'dated '+esc(a.sourceDate.slice(0,10)):'not dated'}; opening this meter does not reverify the vacancy or confirm your career facts.</p>${record.sourceUrl?`<p><a href="${esc(safeUrl(record.sourceUrl))}" target="_blank" rel="noopener noreferrer">Review role source ↗</a> · <a href="#profile" data-match-close>Review Career memory</a></p>`:''}`;
+  d.querySelectorAll('[data-match-close]').forEach(b=>b.onclick=()=>d.close());
+  d.querySelector('#match-preferences-form').onsubmit=async event=>{
+    event.preventDefault();if(pending||blocked)return toast('Resolve pending saves first.');
+    const values=new FormData(event.target),weights={};
+    for(const key of Object.keys(CareerMatch.LABELS))weights[key]=Number(values.get('weight-'+key));
+    if(Object.values(weights).some(v=>!Number.isInteger(v)||v<0||v>5)||!Object.values(weights).some(v=>v>0))return toast('Choose at least one priority above zero.');
+    const rating={value:values.get('interestValue')===''?null:Number(values.get('interestValue')),note:String(values.get('interestNote')||'').trim(),updatedAt:new Date().toISOString()};
+    const targets=[record];
+    if(kind==='job')targets.push(...(state.profile.discovery||[]).filter(r=>r.id===record.discoveryId||r.jobId===record.id));
+    else if(kind==='discovery')targets.push(...state.jobs.filter(j=>j.id===record.jobId||j.discoveryId===record.id));
+    targets.forEach(r=>r.interestRating={...rating});
+    state.profile.matchPreferences={weights};
+    if(await persist()){render();openMatchDialog(id,kind);toast('Interest and match priorities saved.');}
+  };
+  if(!d.open)d.showModal();else d.querySelector('[data-match-close]').focus();
+}
+document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-match-id]');if(!button)return;
+  event.preventDefault();event.stopPropagation();openMatchDialog(button.dataset.matchId,button.dataset.matchKind);
+});

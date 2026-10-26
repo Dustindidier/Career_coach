@@ -36,6 +36,8 @@ def research_context(workspace, revision):
         'generatedAt': datetime.now(timezone.utc).isoformat(),
         'preferences': profile.get('searchPreferences', {}),
         'dailyResearch': profile.get('dailyResearch', {}),
+        'matchPreferences': profile.get('matchPreferences', {}),
+        'interestRatings': [{k: r.get(k, '') for k in ('id','company','title','sourceUrl','interestRating')} for r in workspace.get('jobs', []) + profile.get('discovery', []) + profile.get('inbox', []) if r.get('interestRating')],
         'activeFeedback': [r for r in ledger if r['status'] == 'active'],
         'reviewQueue': [r for r in ledger if r['status'] == 'proposed'],
         'feedbackHistory': [r for r in ledger if r['status'] in ('superseded', 'dismissed')],

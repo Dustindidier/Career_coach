@@ -23,6 +23,10 @@ For each researched or tracked role, explain fit outside bedside and build a con
 
 Include `applicationDeadline` with each research record: status (`published`, `anticipated`, `rolling`, `not_published`, `unverified`), ISO date only for published/anticipated dates, sourceUrl, checkedAt, note and timeZone. Distinguish an anticipated application-window close from a firm deadline. Capture an exact cutoff/timezone only when published; never infer from posting age, employment-form dates or lack of an Apply page. Use not_published only after reviewing a readable listing; inaccessible sources remain unverified. Recheck imminent dates before action; a date passing never automatically changes the application stage.
 
+## Match and personal interest
+
+The user requested a career match meter. Follow RESEARCH_FEEDBACK.md for the disclosed five-factor rubric; do not invent separate percentages. Supply current role evidence so the meter can assess pay, advancement, background, and practical fit. Personal interest belongs to the user: respect explicit per-role `interestRating` and global `matchPreferences` in the brief. Role interest does not waive pay/travel constraints or verify credentials. Ratings are retained on promotion; do not overwrite them during scheduled research.
+
 ## Relevance and freshness checks
 
 - Current saved preferences take precedence over an older assistant-reported target. Preserve the old assertion as superseded with provenance; ask only when current user guidance itself conflicts or remains unclear.
