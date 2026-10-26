@@ -14,6 +14,8 @@ from sources import fetch_source
 from intelligence import duplicate_check, audit_materials, rank_stories
 from career import search_plan, tailor
 from applications import preparation_packet
+from documents import metadata as document_metadata, docx as export_docx, source_candidates
+import re
 from gmail import Gmail, start_oauth, verify_oauth, alert_links, context_hints
 from pathlib import Path
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -136,6 +138,32 @@ def gmail_client():
                  lambda: integration_rpc('delete'), GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GMAIL_REDIRECT_URI)
 
 
+def document_storage(method, path, data=None, content_type='application/json'):
+    req=urllib.request.Request(SUPABASE_URL+'/storage/v1/'+path, data=data, method=method,
+        headers={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':content_type,'x-upsert':'true'})
+    with urllib.request.urlopen(req,timeout=25) as response:
+        return response.read(5000001)
+
+
+def store_source_document(record, data):
+    if SUPABASE_URL:
+        bucket=json.loads(document_storage('GET','bucket/career-documents'))
+        if bucket.get('public'):
+            raise ValueError('Source document bucket must be private.')
+        document_storage('POST','object/career-documents/'+record['storagePath'],data,record['mimeType'])
+    else:
+        folder=DB.parent/'source-documents';folder.mkdir(parents=True,exist_ok=True,mode=0o700)
+        path=folder/record['storagePath'];path.write_bytes(data);path.chmod(0o600)
+
+
+def read_source_document(record):
+    if not re.fullmatch(r'[a-f0-9]{64}\.(?:docx|txt)',record['storagePath']):
+        raise ValueError('Invalid source document path.')
+    if SUPABASE_URL:
+        return document_storage('GET','object/authenticated/career-documents/'+record['storagePath'])
+    return (DB.parent/'source-documents'/record['storagePath']).read_bytes()
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT / 'static'), **kwargs)
@@ -196,6 +224,19 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if urllib.parse.urlsplit(self.path).path == '/oauth/gmail/callback':
             return self.gmail_callback()
+        if urllib.parse.urlsplit(self.path).path == '/api/documents/download':
+            try:
+                identifier=urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get('id',[''])[0]
+                workspace,_=read_snapshot()
+                record=next(d for d in workspace['profile'].get('referenceDocuments',[]) if d['id']==identifier)
+                data=read_source_document(record)
+                self.send_response(200);self.send_header('Content-Type',record['mimeType']);self.send_header('Cache-Control','no-store')
+                name=re.sub(r'[^A-Za-z0-9._ -]','_',record['filename'])
+                self.send_header('Content-Disposition','attachment; filename="'+name+'"');self.end_headers();self.wfile.write(data);return
+            except StopIteration:
+                return self.send_error(404)
+            except Exception:
+                return self.send_error(503,'Source document unavailable')
         if self.path == '/api/gmail/status':
             configured = gmail_configured()
             try:
@@ -257,12 +298,29 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if not self.same_origin():
             return self.send_error(403)
-        if self.path not in ('/api/analyze', '/api/coach', '/api/source-preview', '/api/tailor', '/api/gmail/connect', '/api/gmail/preview', '/api/gmail/draft', '/api/gmail/disconnect', '/api/duplicate-check', '/api/material-audit', '/api/application-packet'):
+        if self.path not in ('/api/analyze', '/api/coach', '/api/source-preview', '/api/tailor', '/api/gmail/connect', '/api/gmail/preview', '/api/gmail/draft', '/api/gmail/disconnect', '/api/duplicate-check', '/api/material-audit', '/api/application-packet', '/api/documents/import', '/api/documents/export'):
             return self.send_error(404)
         try:
             data = self.read_json()
             if not isinstance(data, dict):
                 raise ValueError()
+            if self.path == '/api/documents/import':
+                if not all(isinstance(data.get(k),str) for k in ('filename','kind','base64')):
+                    raise ValueError()
+                try:
+                    raw=base64.b64decode(data['base64'],validate=True)
+                    record=document_metadata(raw,data['filename'],data['kind'])
+                    store_source_document(record,raw)
+                    return self.json_response(200,{'document':record,'facts':source_candidates(record)})
+                except ValueError as error:
+                    return self.json_response(400,{'error':str(error)})
+                except Exception:
+                    return self.json_response(503,{'error':'Could not extract or privately store the source document. Use DOCX/text and verify private storage is available.'})
+            if self.path == '/api/documents/export':
+                if not isinstance(data.get('text'),str) or not 0<len(data['text'])<=150000:
+                    raise ValueError()
+                raw=export_docx(data['text'])
+                return self.json_response(200,{'base64':base64.b64encode(raw).decode(),'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})
             if self.path == '/api/application-packet':
                 if not isinstance(data.get('jobId'), str):
                     raise ValueError()
@@ -276,7 +334,7 @@ class Handler(SimpleHTTPRequestHandler):
                     return self.json_response(400, {'error': str(error)})
             if self.path.startswith('/api/gmail/'):
                 return self.gmail_action(data)
-            if self.path in ('/api/duplicate-check', '/api/material-audit', '/api/application-packet'):
+            if self.path in ('/api/duplicate-check', '/api/material-audit', '/api/application-packet', '/api/documents/import', '/api/documents/export'):
                 try:
                     workspace, _ = read_snapshot()
                 except Exception:

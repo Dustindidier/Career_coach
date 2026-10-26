@@ -68,3 +68,7 @@ Use $application-assistant. Read APPLICATION_AUTOMATION.md, then open the hosted
 ```
 
 For a downloaded preparation packet, save it in `.application-work/approved-application.json` (create the folder if needed) and tell the local agent to read that file. These working files are Git-ignored. The skill is a reusable workflow for a local Codex session, not an always-on daemon or a browser connection to this cloud chat.
+
+## Resume and cover-letter starting point
+
+Use the designated private defaults in Career memory. Original source files remain private and unchanged; database references and extracted text provide shared context across devices. Application packets include authenticated source-download references. The local skill must create and review job-specific materials, not upload an OHC-specific original to an unrelated employer. Source-fact review, current credential checks, and final completed-form review remain distinct from permission to use a document for drafting.

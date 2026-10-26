@@ -88,6 +88,7 @@ def rank_stories(stories, question, focus=''):
 def source_digest(workspace, job):
     records={'facts':[e for e in workspace['profile'].get('entries',[]) if e.get('confirmed') and e.get('category')!='Preference'],
              'stories':[s for s in workspace['stories'] if s.get('confirmed')],
+             'references':[[d['id'],d['sha256'],d.get('reviewedForApplications',False)] for d in workspace['profile'].get('referenceDocuments',[]) if d.get('approvedForDrafting')],
              'job':{k:job.get(k) for k in ('id','company','title','requirements','posting','sourceUrl')}}
     return hashlib.sha256(json.dumps(records,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
@@ -117,11 +118,16 @@ def positive_credentials(text):
 def audit_materials(workspace, job, text, digest=''):
     facts=[e['text'] for e in workspace['profile'].get('entries',[]) if e.get('confirmed') and e.get('category')!='Preference']
     stories=['\n'.join(s.get(k,'') for k in ('situation','action','outcome')) for s in workspace['stories'] if s.get('confirmed')]
-    sources=facts+stories
+    documents=[d for d in workspace['profile'].get('referenceDocuments',[]) if d.get('kind')=='resume' and d.get('approvedForDrafting')]
+    sources=facts+stories+[d['extractedText'] for d in documents]
     approved_numbers=set().union(*(numbers(s) for s in sources)) if sources else set()
     approved_credentials=set().union(*(positive_credentials(s) for s in sources)) if sources else set()
     issues=[]
-    for item in sorted(numbers(text)-approved_numbers):
+    for document in documents:
+        if not document.get('reviewedForApplications'):
+            issues.append({'kind':'Source resume needs review','detail':document['filename'],'action':'Review the source document and imported facts in Career memory before using it for an application.'})
+    numeric_text=re.sub(r'(?im)^\s*(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\s*$','',text)
+    for item in sorted(numbers(numeric_text)-approved_numbers):
         issues.append({'kind':'Unsupported figure/date','detail':item,'action':'Confirm the specific claim in career memory, correct it, or remove it.'})
     for item in sorted(positive_credentials(text)-approved_credentials):
         issues.append({'kind':'Credential needs evidence','detail':item,'action':'Add a positive, current confirmed credential source; coursework or an expired credential is not completion.'})

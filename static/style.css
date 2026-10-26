@@ -5,3 +5,5 @@
 code{overflow-wrap:anywhere;font-size:12px}#gmail-preview{margin-top:24px}#gmail-preview .panel{background:#f8faf5}#gmail-preview ul{padding-left:20px}#gmail-preview a{overflow-wrap:anywhere}@media(min-width:601px) and (max-height:760px){aside{overflow:auto}.sidebar-bottom{position:static;margin-top:24px}}
 
 #material-audit .feedback{white-space:normal}#material-audit .check p{margin-bottom:8px}.story-card .pill{margin-top:4px}.check details{margin-top:10px}
+
+.check h3{overflow-wrap:anywhere}.reference-review{margin-top:12px}

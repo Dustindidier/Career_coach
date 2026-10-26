@@ -33,6 +33,7 @@ def preparation_packet(workspace, job_id):
     if audit['issues']:
         raise ValueError('Resolve the claims/placeholder/source checks in Tailored materials before approving an application packet.')
     return {'version': 1, 'job': {k: job.get(k, '') for k in ('id', 'company', 'title', 'sourceUrl')},
+            'sourceDocuments': [{'id':d['id'],'kind':d['kind'],'filename':d['filename'],'sha256':d['sha256'],'downloadUrl':'https://next-chapter-uqr1.onrender.com/api/documents/download?id='+d['id'],'use':'Reference only; prepare and approve target-specific files before upload.'} for d in workspace['profile'].get('referenceDocuments',[]) if d.get('approvedForDrafting')],
             'candidateName': workspace['profile']['name'], 'confirmedFacts': facts,
             'resumeText': materials['resume'], 'coverLetterText': materials.get('coverLetter', ''),
             'screeningNotes': workflow.get('screeningNotes', ''), 'reviewedAt': workflow.get('reviewedAt', ''),

@@ -1,6 +1,7 @@
 """Evidence-based tailoring and free search plans. No invented candidate claims."""
 from urllib.parse import urlencode
 from intelligence import source_digest
+from documents import base_document, draft_from_resume, draft_from_letter
 
 DEFAULT_ROLES = ['Clinical Safety Nurse', 'Utilization Review Nurse', 'Clinical Documentation Specialist',
                  'Quality Improvement Nurse', 'Clinical Research Nurse', 'Clinical Informatics Nurse']
@@ -87,8 +88,17 @@ def tailor(workspace, job_id):
     intro = f'Dear Hiring Team,\n\nI am interested in the {job["title"]} opportunity at {job["company"]}. [Add your specific, researched reason for applying.]'
     proof = '\n\nRelevant experience I would welcome discussing:\n' + '\n'.join('- ' + e['text'] for e in relevant) if relevant else '\n\n[Add a confirmed example that addresses a reviewed requirement.]'
     closing = '\n\n[Explain how this evidence connects to the role, and acknowledge any training needs.]\n\nThank you for your consideration.\n\n' + name
-    return {'sourceDigest': source_digest(workspace, job), 'jobId': job_id, 'title': job['title'], 'company': job['company'], 'supported': supported, 'gaps': gaps,
-        'evidence': relevant, 'resume': '\n'.join(resume), 'coverLetter': intro + proof + closing,
+    resume_text = '\n'.join(resume)
+    letter_text = intro + proof + closing
+    base_resume = base_document(workspace, 'resume')
+    base_letter = base_document(workspace, 'coverLetter')
+    if base_resume:
+        resume_text = draft_from_resume(base_resume['extractedText'], job)
+    if base_letter:
+        letter_text = draft_from_letter(base_letter['extractedText'], job, name)
+    references = [{'id': d['id'], 'filename': d['filename'], 'kind': d['kind'], 'reviewedForApplications': d.get('reviewedForApplications', False)} for d in (base_resume, base_letter) if d]
+    return {'baseSources': references, 'sourceDigest': source_digest(workspace, job), 'jobId': job_id, 'title': job['title'], 'company': job['company'], 'supported': supported, 'gaps': gaps,
+        'evidence': relevant, 'resume': resume_text, 'coverLetter': letter_text,
         'questions': ['Could you clarify: ' + r['requirement'] for r in gaps[:5]],
         'label': 'Free evidence-based drafts · review all placeholders and claims',
         'limitations': 'Evidence links reflect your assessment, not proof of qualification. No company research, market salary, or ATS score is inferred.'}

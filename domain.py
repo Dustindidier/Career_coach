@@ -45,6 +45,9 @@ def validate_workspace(data):
             return False
         if not isinstance(job.get('replyDraft', ''), str):
             return False
+    documents = p.get('referenceDocuments', [])
+    if not isinstance(documents, list) or not all(strings(d, ('id','kind','filename','sha256','extractedText','storagePath','mimeType','createdAt')) and d['kind'] in ('resume','coverLetter') and isinstance(d.get('approvedForDrafting'), bool) and isinstance(d.get('reviewedForApplications'), bool) for d in documents):
+        return False
     preferences = p.get('searchPreferences', {})
     if not isinstance(preferences, dict) or not all(isinstance(preferences.get(k, ''), str) for k in ('location', 'remote', 'compensation', 'constraints')):
         return False

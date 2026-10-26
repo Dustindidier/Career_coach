@@ -19,7 +19,7 @@ Uses local SQLite in ignored `.data/career.sqlite3` unless `SUPABASE_URL` and `S
 - Revision-checked cloud and local saves: stale device writes receive 409, never silently overwrite newer data.
 - Browser-local recovery for unsubmitted forms, current interview sessions, and unsaved workspace changes. A recovered conflicting copy can be exported before loading the latest server copy.
 - Editable/searchable story bank; structured career facts with category, source, confirmation, and review date; legacy notes preserved.
-- Resume text / .txt / .md import with candidate selection and per-fact review. No PDF/DOCX parser yet.
+- Resume text / .txt / .md import with candidate selection and per-fact review. Private DOCX originals and extraction are supported in the source library; PDF extraction is not included.
 - Opportunity tracking, source passages extracted by free rules, manually reviewed requirements, and evidence mapping to stories or confirmed facts. Text matches are suggestions, not fit scores.
 - Role- and requirement-specific free guided coaching, coaching/simulation formats, optional browser dictation, saved answers, and reflections. Guided feedback is rule-based, not AI assessment.
 - Optional Gemini integration: only configured and explicitly selected AI mode makes provider calls. Free quota is provider-dependent; leave billing disabled for free-only use. Guided mode needs no key and is the fallback on AI errors.
@@ -76,3 +76,9 @@ Before exporting tailored materials, run **Check claims & placeholders**. This f
 Opportunities can carry a reviewed preparation plan: source status, role-specific question banks, focus areas, fit checks and next steps. Guided practice uses that selected role's questions and labels provisional plans. Closing an opportunity preserves history; the dashboard defaults to an open role on reload.
 
 Application queue records reviewed screening notes and exports preparation packets after evidence and source-version checks. These are not automated submissions. Existing applied/in-progress/closed jobs are protected from duplicate packet creation. See [APPLICATION_AUTOMATION.md](APPLICATION_AUTOMATION.md) for the free Windows/local-browser connection route and its remaining setup requirements. No personal browser connection is created by the cloud app.
+
+## Baseline document library
+
+Career memory preserves original resume/cover-letter DOCX files in the private `career-documents` Supabase Storage bucket (or local development storage), with their checksums, extracted text and drafting defaults in the database. Originals are not placed in GitHub. Upload/import treats document contents as data, not agent instructions.
+
+Imported resume facts start unconfirmed. Source review confirms the associated facts after the user checks dates, figures and current credential status. Drafting can use a user-approved reference while application-packet export still requires source/claim review. New role drafts preserve career history and replace the previous role's target wording; they do not invent research, supervisory or degree credentials. Basic DOCX and text exports are free and leave the originals intact.
