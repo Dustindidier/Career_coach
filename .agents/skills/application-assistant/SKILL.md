@@ -15,6 +15,16 @@ Operate as the shared career workflow for this project. Read `AGENTS.md` and `RE
 4. Use current active guidance to research real postings. Compare recurring base pay and advancement together, with an explicit route into the desired field; identify indirect routes, qualification gaps, estimates and travel tradeoffs. Do not infer global preferences from one Yes/No decision.
 5. Return a Discover research batch with original source links, checked date, evidence, relevant fit reasons and concerns. Include the research brief revision in availabilityEvidence. Capture decision reasons in the app, return new feedback, and obtain a fresh brief for the next search. This is a repeatable session workflow, not an always-on cross-chat connection.
 
+## Relevance and freshness checks
+
+- Current saved preferences take precedence over an older assistant-reported target. Preserve the old assertion as superseded with provenance; ask only when current user guidance itself conflicts or remains unclear.
+- Screen recurring base pay against the minimum before using headline earnings. Distinguish base, base plus incentive, on-target earnings, hourly annualization assumptions, estimates and undisclosed pay. A range crossing the minimum is conditional, not proof of a qualifying offer.
+- Label field-based work even when a board calls it remote. Report travel percentage, overnight frequency, call and residency separately when available. Do not assume willingness to relocate.
+- Check the individual employer requisition. Search indexing dates and an Apply label alone do not prove a vacancy remains open. Exclude confirmed expired roles and talent pools; label inaccessible or indexed-only roles provisional. Link the exact source actually reviewed; never invent an ATS URL or requisition.
+- Deduplicate against both tracked jobs and all Discover decisions. Compare employer/title/location as well as canonical URLs, since syndicated links can represent the same requisition. Never silently reintroduce a passed role.
+- Order a batch by realistic qualification, pay and user constraints together. Mark recruiter-screen-first, travel tradeoffs and future/stretch roles prominently. A requested batch size does not make an unqualified or unverified role a strong recommendation; report the tradeoffs explicitly.
+- An explicit request to add a role and tailor materials authorizes promotion into My opportunities and drafting. Extract requirements, preserve their unreviewed state, use approved starting documents, save interview/fit questions, and verify persistence. Keep submission authorization separate. Accepting that role does not approve its entire compensation/travel package as a global preference.
+
 The target-approval steps below apply to application preparation/submission, not to ordinary research or feedback drafting.
 
 ## Establish the target and evidence
